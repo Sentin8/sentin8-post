@@ -1031,20 +1031,20 @@ pub async fn delete_gateway(
         .bind(&_a.claims.scope)
         .execute(&mut *conn)
         .await;
-    let row: Option<(Uuid, String)> = sqlx::query_as(
-        "SELECT env_id, scope FROM gateways WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_optional(&mut *conn)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let row: Option<(Uuid, String)> =
+        sqlx::query_as("SELECT env_id, scope FROM gateways WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&mut *conn)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let Some((row_env, row_scope)) = row else {
         return Err((StatusCode::NOT_FOUND, "gateway not found".into()));
     };
     if row_scope != "env" && !_a.has_scope("sentin8:sys:admin") {
         return Err((
             StatusCode::FORBIDDEN,
-            "platform-tier gateway deletion requires the platform admin (sentin8:sys:admin) scope".into(),
+            "platform-tier gateway deletion requires the platform admin (sentin8:sys:admin) scope"
+                .into(),
         ));
     }
     // Deleting context: the ROW's env.
