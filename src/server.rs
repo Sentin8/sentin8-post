@@ -66,10 +66,31 @@ pub async fn build_state(
     // CONSUMES the engine — no second engine or DCR registration here.
     let policy_engine = core.admin.policy.clone();
 
+    // auth DESIGN §4.3f: boot-load the workload registry map (the
+    // token-free authorization record) for the cert-first handler gate —
+    // sys's post pusher presents the `sys-post` certificate on every
+    // notification send; a bearer-only gate 401s it forever (the 92k/day
+    // retry loop, CAPTCPU-1 item 1). Fail-open-with-warning on an
+    // unreachable Valkey at boot — the bearer path (user/delegated)
+    // serves while certificate-workload calls fail-closed until the
+    // next boot (the map is normally published by enroll BEFORE
+    // services start; func carries the same fallback).
+    let workload_registry =
+        match sentin8::auth::workload_registry::WorkloadMap::boot_load("sentin8:post")
+            .await
+        {
+            Ok(map) => map,
+            Err(e) => {
+                tracing::warn!(error = %e, "post: workload registry map unavailable at boot — certificate-workload calls fail-closed until next boot");
+                sentin8::auth::workload_registry::WorkloadMap::boot_load_empty("sentin8:post")
+            }
+        };
+
     let state = AppState {
         config: Arc::new(config),
         pool: core.pool,
         policy: policy_engine,
+        workload_registry,
     };
 
     Ok(state)

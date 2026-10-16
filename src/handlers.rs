@@ -32,6 +32,10 @@ pub struct AppState {
     /// remain primary; policy adds the attribute layer.
     /// The policy.
     pub policy: Arc<crate::policy::Engine>,
+    /// Boot-loaded workload registry (auth DESIGN §4.3f) — the cert-first
+    /// handler gate's authorization record (sys's `sys-post` pusher,
+    /// any enrolled M2M caller).
+    pub workload_registry: sentin8::auth::workload_registry::WorkloadMap,
 }
 
 // ── Health ─────────────────────────────────────────────────────────────
@@ -123,7 +127,7 @@ pub async fn send_message(
     headers: HeaderMap,
     Json(req): Json<SendMessageRequest>,
 ) -> Result<Json<SendMessageResponse>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -239,7 +243,7 @@ pub async fn list_messages(
     headers: HeaderMap,
     Query(q): Query<ListMessagesQuery>,
 ) -> Result<Json<Vec<MessageSummary>>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -353,7 +357,7 @@ pub async fn get_message(
     headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -494,7 +498,7 @@ pub async fn mark_message_read(
     headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -617,7 +621,7 @@ pub async fn get_message_content(
     headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -676,7 +680,7 @@ pub async fn list_dlq(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -755,7 +759,7 @@ pub async fn replay_dlq(
     headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let _a = auth::verify_token(&state.config, &headers).await?;
+    let _a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &_a,
@@ -829,7 +833,7 @@ pub async fn list_gateways(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -911,7 +915,7 @@ pub async fn create_gateway(
     Query(q): Query<TargetEnvQuery>,
     Json(req): Json<CreateGatewayRequest>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
-    let a = auth::verify_token(&state.config, &headers).await?;
+    let a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &a,
@@ -1005,7 +1009,7 @@ pub async fn delete_gateway(
     headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let _a = auth::verify_token(&state.config, &headers).await?;
+    let _a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &_a,
@@ -1088,7 +1092,7 @@ pub async fn test_gateway(
     headers: HeaderMap,
     Json(req): Json<CreateGatewayRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let _a = auth::verify_token(&state.config, &headers).await?;
+    let _a = auth::verify_cert_or_token(&state.workload_registry, &state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
         &_a,
