@@ -4,7 +4,11 @@
     {
       "service_type": "sentin8:post",
       "subdomain": "post",
-      "binary": "sentin8-post"
+      "binary": "sentin8-post",
+      "telemetry_property": {
+        "slug": "post",
+        "name": "Sentin8:Post Platform Telemetry"
+      }
     }
   ]
 }
