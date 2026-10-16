@@ -44,7 +44,7 @@ sequenceDiagram
     PO->>PO: 1. View-channel delivery (instant)
     PO->>C: 2. notification.received → Bus event
     PO->>C: ws push to user's app
-    PO->>G: 3. external channels (email: SMTP relay; others: stub)
+    PO->>G: 3. external channels (email: SMTP relay, others: stub)
     PO->>IN: 4. mark delivered
 ```
 
