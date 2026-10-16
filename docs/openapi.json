@@ -1,0 +1,678 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "sentin8-post",
+    "description": "Sentin8 Sentin8:Post — multi-channel message delivery service.",
+    "license": {
+      "name": "MIT OR Apache-2.0",
+      "identifier": "MIT OR Apache-2.0"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/dlq": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`GET /v1/dlq` — list dead-lettered deliveries.\n`GET /v1/dlq` — list dead-letter queue entries.\nList dlq.",
+        "operationId": "dlq.list",
+        "responses": {
+          "200": {
+            "description": "DLQ entries"
+          },
+          "403": {
+            "description": "Missing post:read scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
+    "/v1/dlq/{id}/replay": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`POST /v1/dlq/{id}/replay` — replay a dead-lettered delivery.\n`POST /v1/dlq/{id}/replay` — replay a DLQ entry.\nHandle replay dlq.",
+        "operationId": "message.replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "DLQ entry ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DLQ entry replayed"
+          },
+          "403": {
+            "description": "Missing post:write scope"
+          },
+          "404": {
+            "description": "DLQ entry not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    },
+    "/v1/gateways": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`GET /v1/gateways` — list gateway configs.\nList gateways.",
+        "operationId": "gateway.list",
+        "responses": {
+          "200": {
+            "description": "List of gateways"
+          },
+          "403": {
+            "description": "Missing post:read scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`POST /v1/gateways` — create a gateway config.\n`POST /v1/gateways` — create a gateway config.\nCreate gateway.",
+        "operationId": "gateway.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGatewayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Gateway created"
+          },
+          "403": {
+            "description": "Missing post:write scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    },
+    "/v1/gateways/test": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`POST /v1/gateways/test` — send a test message through a gateway.\n`POST /v1/gateways/test` — test a gateway config.\nHandle test gateway.",
+        "operationId": "gateway.test",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGatewayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Gateway test result"
+          },
+          "403": {
+            "description": "Missing post:write scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    },
+    "/v1/gateways/{id}": {
+      "delete": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`DELETE /v1/gateways/{id}` — delete a gateway config.\n`DELETE /v1/gateways/{id}` — delete a gateway config.\nDelete gateway.",
+        "operationId": "gateway.delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Gateway ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Gateway deleted"
+          },
+          "403": {
+            "description": "Missing post:write scope"
+          },
+          "404": {
+            "description": "Gateway not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    },
+    "/v1/messages": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "List messages.",
+        "operationId": "message.list",
+        "parameters": [
+          {
+            "name": "message_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "unread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageSummary"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing post:read scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
+    "/v1/messages/{id}": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`GET /v1/messages/{id}` — message detail with all delivery attempts.\nFetch message.",
+        "operationId": "message.get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message detail"
+          },
+          "403": {
+            "description": "Missing post:read scope"
+          },
+          "404": {
+            "description": "Message not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
+    "/v1/messages/{id}/content": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`GET /v1/messages/{id}/content` — message content (subject + body only).\n`GET /v1/messages/{id}/content` — raw message content.\nFetch message content.",
+        "operationId": "message.content",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message content"
+          },
+          "403": {
+            "description": "Missing post:read scope"
+          },
+          "404": {
+            "description": "Message not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
+    "/v1/messages/{id}/read": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`POST /v1/messages/{id}/read` — mark a message as read.",
+        "description": "Sets `read_at = now` on the message. Idempotent — a second call is a\nno-op. Used by customer-facing apps (eBank) when the user opens a\nmessage, so the notification badge unread count decreases. The read\nreceipt `sentin8:post:notification:read` is emitted as a local\n`post.outbox` row in the SAME transaction as the read update\n(post DESIGN §4) — exactly once with the domain change; the shell\nrelay produces it to Bus (§6.7).\nHandle mark message read.",
+        "operationId": "message.mark-read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message marked as read"
+          },
+          "403": {
+            "description": "Missing post:read scope"
+          },
+          "404": {
+            "description": "Message not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
+    "/v1/send": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`GET /v1/messages` — list messages in the caller's org/env.\nSend message.",
+        "operationId": "message.send",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Message queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing post:write scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateGatewayRequest": {
+        "type": "object",
+        "description": "Request body for creategateway.",
+        "required": [
+          "scope",
+          "channel",
+          "provider",
+          "config",
+          "is_enabled"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "The channel."
+          },
+          "config": {
+            "description": "The config."
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "description": "Whether enabled."
+          },
+          "provider": {
+            "type": "string",
+            "description": "The provider."
+          },
+          "scope": {
+            "type": "string",
+            "description": "The scope."
+          }
+        }
+      },
+      "ListMessagesQuery": {
+        "type": "object",
+        "description": "The listmessagesquery type.",
+        "properties": {
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The limit."
+          },
+          "message_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The message type."
+          },
+          "mine": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "When `mine=true`, filter to messages where `recipient_user_id` matches\nthe caller's Auth user UUID. Used by customer-facing apps (eBank) so\nusers only see their own messages, not all org/env messages.\nThe mine."
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The status."
+          },
+          "unread": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "When `unread=true`, filter to messages where `read_at IS NULL`.\nThe unread."
+          }
+        }
+      },
+      "MessageSummary": {
+        "type": "object",
+        "description": "The messagesummary type.",
+        "required": [
+          "id",
+          "stream_family",
+          "message_type",
+          "category",
+          "priority",
+          "subject",
+          "delivered",
+          "read",
+          "created_at"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "The category."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "created time."
+          },
+          "delivered": {
+            "type": "boolean",
+            "description": "The delivered."
+          },
+          "delivered_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "The delivered at."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier."
+          },
+          "message_type": {
+            "type": "string",
+            "description": "The message type."
+          },
+          "priority": {
+            "type": "string",
+            "description": "The priority."
+          },
+          "read": {
+            "type": "boolean",
+            "description": "The read."
+          },
+          "read_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "The read at."
+          },
+          "recipient_email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The recipient email."
+          },
+          "recipient_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "recipient user identifier."
+          },
+          "stream_family": {
+            "type": "string",
+            "description": "The stream family."
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject."
+          }
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "description": "Request body for sendmessage.",
+        "required": [
+          "message_type",
+          "subject",
+          "body"
+        ],
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "The body."
+          },
+          "body_format": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The body format."
+          },
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The category."
+          },
+          "message_type": {
+            "type": "string",
+            "description": "The message type."
+          },
+          "metadata": {
+            "description": "The metadata."
+          },
+          "priority": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The priority."
+          },
+          "recipient_email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The recipient email."
+          },
+          "recipient_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "recipient user identifier."
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject."
+          }
+        }
+      },
+      "SendMessageResponse": {
+        "type": "object",
+        "description": "Response payload for sendmessage.",
+        "required": [
+          "id",
+          "env_id",
+          "status"
+        ],
+        "properties": {
+          "env_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "env identifier."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identifier."
+          },
+          "status": {
+            "type": "string",
+            "description": "The status."
+          }
+        }
+      }
+    }
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "post",
+      "description": "Sentin8:Post admin API — messages, gateways, DLQ"
+    }
+  ]
+}
