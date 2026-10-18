@@ -34,7 +34,7 @@ use crate::handlers::AppState;
 
 // ── DTOs ────────────────────────────────────────────────────────────────
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// The putpolicysetbody type.
 pub struct PutPolicySetBody {
     /// The policies.
@@ -53,7 +53,7 @@ pub struct PutPolicySetBody {
     pub mode: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// The testpolicysetbody type.
 pub struct TestPolicySetBody {
     /// Candidate Shield policy text (not yet saved).
@@ -145,6 +145,17 @@ async fn emit_policy_event(
 
 /// `GET /v1/admin/policy-sets` — list this service's policy sets.
 /// List policy sets.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/policy-sets",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    responses(
+        (status = 200, description = "OK", body = Vec<serde_json::Value>),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn list_policy_sets(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -200,6 +211,20 @@ pub async fn list_policy_sets(
 
 /// `GET /v1/admin/policy-sets/{name}` — fetch one set.
 /// Fetch policy set.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/policy-sets/{name}",
+    params(
+        ("name" = String, Path, description = "Policy set name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn get_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -256,6 +281,21 @@ pub async fn get_policy_set(
 /// validation. Platform rows are returned read-only (400); tenant
 /// rows (or new rows) are validated then stored, starting in `shadow`.
 /// Handle PUT policy set.
+#[utoipa::path(
+    put,
+    path = "/v1/admin/policy-sets/{name}",
+    params(
+        ("name" = String, Path, description = "Policy set name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    request_body = PutPolicySetBody,
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn put_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -384,6 +424,20 @@ pub async fn put_policy_set(
 
 /// `DELETE /v1/admin/policy-sets/{name}` — tenant sets only.
 /// Delete policy set.
+#[utoipa::path(
+    delete,
+    path = "/v1/admin/policy-sets/{name}",
+    params(
+        ("name" = String, Path, description = "Policy set name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn delete_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -456,6 +510,21 @@ pub async fn delete_policy_set(
 /// `POST /v1/admin/policy-sets/{name}/test` — dry-run candidate policy text
 /// against a sample context; returns decision + trace WITHOUT storing.
 /// Handle test policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets/{name}/test",
+    params(
+        ("name" = String, Path, description = "Policy set name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    request_body = TestPolicySetBody,
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn test_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -523,7 +592,7 @@ pub async fn test_policy_set(
 // ── Relations admin API (/ — ReBAC) ───────────────────────────
 
 /// `PUT /v1/admin/relations` body — one relation tuple.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// The putrelationbody type.
 pub struct PutRelationBody {
     /// The subject type.
@@ -599,6 +668,17 @@ fn emit_relations_event(
 
 /// `GET /v1/admin/relations` — list this service's relation tuples.
 /// List relations.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/relations",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    responses(
+        (status = 200, description = "OK", body = Vec<serde_json::Value>),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn list_relations(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -636,6 +716,18 @@ pub async fn list_relations(
 /// `PUT /v1/admin/relations` — upsert one relation tuple. Tenant
 /// tuples carry `origin='tenant'`; the UNIQUE key dedupes re-writes.
 /// Handle PUT relation.
+#[utoipa::path(
+    put,
+    path = "/v1/admin/relations",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = PutRelationBody,
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn put_relation(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -695,7 +787,7 @@ pub async fn put_relation(
 }
 
 /// `DELETE /v1/admin/relations` query/body — identifies the tuple.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The deleterelationquery type.
 pub struct DeleteRelationQuery {
     /// The subject type.
@@ -717,6 +809,17 @@ pub struct DeleteRelationQuery {
 /// platform: env admins govern their env's graph; platform tuples are
 /// re-seeded by enroll on the next `vertical init`).
 /// Delete relation.
+#[utoipa::path(
+    delete,
+    path = "/v1/admin/relations",
+    params(DeleteRelationQuery),
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn delete_relation(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -777,7 +880,7 @@ pub async fn delete_relation(
 /// `GET /v1/admin/relations/check` — Zanzibar-style dry-run :
 /// is `subject` connected to `object` by `relation` (directly or through the
 /// hierarchy)? Returns the tuple path + decision without side effects.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The relationcheckquery type.
 pub struct RelationCheckQuery {
     /// The subject type.
@@ -796,6 +899,17 @@ pub struct RelationCheckQuery {
 }
 
 /// Check relation.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/relations/check",
+    params(RelationCheckQuery),
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn check_relation(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -866,7 +980,7 @@ pub async fn check_relation(
 // ── Attributes admin API (/ — ABAC) ──────────────────────────
 
 /// `PUT /v1/admin/attributes` body — one principal attribute.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// The putattributebody type.
 pub struct PutAttributeBody {
     /// subject identifier.
@@ -879,7 +993,7 @@ pub struct PutAttributeBody {
 
 /// `GET /v1/admin/attributes` — list principal attributes for one subject
 /// (or all subjects when `subject_id` is omitted) in the target env.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The listattributesquery type.
 pub struct ListAttributesQuery {
     #[serde(default)]
@@ -891,6 +1005,17 @@ pub struct ListAttributesQuery {
 }
 
 /// List attributes.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/attributes",
+    params(ListAttributesQuery),
+    responses(
+        (status = 200, description = "OK", body = Vec<serde_json::Value>),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn list_attributes(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -964,6 +1089,18 @@ fn emit_attrs_event(pool: &sqlx::PgPool, env_id: Uuid, subject_id: &str, attr_ke
 /// Values must be JSON scalars or arrays of scalars (Shield restricted
 /// expressions cannot represent nested objects — 422 otherwise).
 /// Handle PUT attribute.
+#[utoipa::path(
+    put,
+    path = "/v1/admin/attributes",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = PutAttributeBody,
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn put_attribute(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1018,7 +1155,7 @@ pub async fn put_attribute(
 }
 
 /// `DELETE /v1/admin/attributes` — remove one principal attribute.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The deleteattributequery type.
 pub struct DeleteAttributeQuery {
     /// subject identifier.
@@ -1031,6 +1168,17 @@ pub struct DeleteAttributeQuery {
 }
 
 /// Delete attribute.
+#[utoipa::path(
+    delete,
+    path = "/v1/admin/attributes",
+    params(DeleteAttributeQuery),
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn delete_attribute(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1078,7 +1226,7 @@ pub async fn delete_attribute(
 // ) ─────────────────────────────────────────
 
 /// Shared body for the mode-flip aliases: `{"policy_set_name": "…", "enabled": bool}`.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// The policymodebody type.
 pub struct PolicyModeBody {
     /// The policy set name.
@@ -1178,6 +1326,18 @@ async fn flip_policy_mode(
 
 /// `POST /v1/admin/policy-sets/enforce` — promote a set to enforced.
 /// Handle admin enforce policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets/enforce",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = PolicyModeBody,
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn admin_enforce_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1197,6 +1357,18 @@ pub async fn admin_enforce_policy_set(
 
 /// `POST /v1/admin/policy-sets/shadow` — demote a set to shadow (rollback).
 /// Handle admin shadow policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets/shadow",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = PolicyModeBody,
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn admin_shadow_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1209,6 +1381,18 @@ pub async fn admin_shadow_policy_set(
 /// `POST /v1/admin/policy-sets/disable` — disable a set (no-match → deny for
 /// its actions; use `shadow` for pure observation-off).
 /// Handle admin disable policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets/disable",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = PolicyModeBody,
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn admin_disable_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1265,7 +1449,7 @@ fn check_text_caps(policies: &str, schema: Option<&str>) -> Result<(), (StatusCo
 /// `POST /v1/admin/policy-sets` — create a tenant policy set (name in body).
 /// Reuses the local PUT core (validation + tenant origin + event + audit),
 /// then redirects the RFW renderer to the editor page.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// The createpolicysetbody type.
 pub struct CreatePolicySetBody {
     /// The policy set name.
@@ -1284,6 +1468,18 @@ pub struct CreatePolicySetBody {
 }
 
 /// Create policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = CreatePolicySetBody,
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn create_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1334,6 +1530,21 @@ pub async fn create_policy_set(
 
 /// `POST /v1/admin/policy-sets/{name}/save` — PUT alias for the RFW renderer.
 /// Handle save policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets/{name}/save",
+    params(
+        ("name" = String, Path, description = "Policy set name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    request_body = PutPolicySetBody,
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn save_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1350,6 +1561,21 @@ pub async fn save_policy_set(
 /// all four actions (axum's matchit router cannot register `{name}/delete`
 /// next to `{name}/{action}` without a conflict).
 /// Handle admin path action policy set.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/policy-sets/{name}/{action}",
+    params(
+        ("name" = String, Path, description = "Policy set name"),
+        ("action" = String, Path, description = "Row action (enforce | shadow | disable | delete)"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn admin_path_action_policy_set(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1393,6 +1619,20 @@ pub async fn admin_path_action_policy_set(
 /// the first is subject_type, the middle rest is subject_id — tolerant of
 /// colons inside subject ids).
 /// Handle admin delete relation path.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/relations/{id}/delete",
+    params(
+        ("id" = String, Path, description = "Relation id"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn admin_delete_relation_path(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1428,6 +1668,20 @@ pub async fn admin_delete_relation_path(
 /// `id` is `subject_id:attr_key` as emitted by the RFW list; splitn(2)
 /// keeps any colons inside the attribute key.
 /// Handle admin delete attribute path.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/attributes/{id}/delete",
+    params(
+        ("id" = String, Path, description = "Attribute id"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 204, description = "Done"),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn admin_delete_attribute_path(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -1452,6 +1706,17 @@ pub async fn admin_delete_attribute_path(
 /// . Reads the shared audit trail rows the runtime writes
 /// (`event->>'action' IN ('policy.deny','policy.would_deny')`).
 /// List policy decisions.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/policy-decisions",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    responses(
+        (status = 200, description = "Recent decision log (policy.deny / would_deny rows)", body = Vec<serde_json::Value>),
+        (status = 403, description = "Caller lacks the policy scope"),
+    ),
+    security(("sentin8:post:policy:read" = [])),
+    tag = "policy",
+)]
 pub async fn list_policy_decisions(
     State(state): State<AppState>,
     headers: HeaderMap,

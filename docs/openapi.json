@@ -10,6 +10,1165 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/v1/admin/attributes": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "List attributes.",
+        "operationId": "list_attributes",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "description": "subject identifier.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "path",
+            "description": "target env identifier.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`PUT /v1/admin/attributes` — upsert one principal attribute.\nValues must be JSON scalars or arrays of scalars (Shield restricted\nexpressions cannot represent nested objects — 422 otherwise).\nHandle PUT attribute.",
+        "operationId": "put_attribute",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutAttributeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Delete attribute.",
+        "operationId": "delete_attribute",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "description": "subject identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attr_key",
+            "in": "path",
+            "description": "The attr key.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "path",
+            "description": "target env identifier.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/attributes/{id}/delete": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/attributes/{id}/delete` — row-action alias.\n`id` is `subject_id:attr_key` as emitted by the RFW list; splitn(2)\nkeeps any colons inside the attribute key.\nHandle admin delete attribute path.",
+        "operationId": "admin_delete_attribute_path",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Attribute id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-decisions": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`GET /v1/admin/policy-decisions` — deny / would-deny feed for the UI\n. Reads the shared audit trail rows the runtime writes\n(`event->>'action' IN ('policy.deny','policy.would_deny')`).\nList policy decisions.",
+        "operationId": "list_policy_decisions",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent decision log (policy.deny / would_deny rows)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`GET /v1/admin/policy-sets` — list this service's policy sets.\nList policy sets.",
+        "operationId": "list_policy_sets",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Create policy set.",
+        "operationId": "create_policy_set",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePolicySetBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/disable": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/policy-sets/disable` — disable a set (no-match → deny for\nits actions; use `shadow` for pure observation-off).\nHandle admin disable policy set.",
+        "operationId": "admin_disable_policy_set",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyModeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/enforce": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/policy-sets/enforce` — promote a set to enforced.\nHandle admin enforce policy set.",
+        "operationId": "admin_enforce_policy_set",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyModeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/shadow": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/policy-sets/shadow` — demote a set to shadow (rollback).\nHandle admin shadow policy set.",
+        "operationId": "admin_shadow_policy_set",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyModeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/{name}": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`GET /v1/admin/policy-sets/{name}` — fetch one set.\nFetch policy set.",
+        "operationId": "get_policy_set",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Policy set name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`PUT /v1/admin/policy-sets/{name}` — create/update with write-time\nvalidation. Platform rows are returned read-only (400); tenant\nrows (or new rows) are validated then stored, starting in `shadow`.\nHandle PUT policy set.",
+        "operationId": "put_policy_set",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Policy set name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutPolicySetBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`DELETE /v1/admin/policy-sets/{name}` — tenant sets only.\nDelete policy set.",
+        "operationId": "delete_policy_set",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Policy set name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/{name}/save": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/policy-sets/{name}/save` — PUT alias for the RFW renderer.\nHandle save policy set.",
+        "operationId": "save_policy_set",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Policy set name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutPolicySetBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/{name}/test": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/policy-sets/{name}/test` — dry-run candidate policy text\nagainst a sample context; returns decision + trace WITHOUT storing.\nHandle test policy set.",
+        "operationId": "test_policy_set",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Policy set name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPolicySetBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/policy-sets/{name}/{action}": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/policy-sets/{name}/{action}` — path-param row-action\ndispatcher (enforce | shadow | disable | delete). One route shape serves\nall four actions (axum's matchit router cannot register `{name}/delete`\nnext to `{name}/{action}` without a conflict).\nHandle admin path action policy set.",
+        "operationId": "admin_path_action_policy_set",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Policy set name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "description": "Row action (enforce | shadow | disable | delete)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/relations": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`GET /v1/admin/relations` — list this service's relation tuples.\nList relations.",
+        "operationId": "list_relations",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`PUT /v1/admin/relations` — upsert one relation tuple. Tenant\ntuples carry `origin='tenant'`; the UNIQUE key dedupes re-writes.\nHandle PUT relation.",
+        "operationId": "put_relation",
+        "parameters": [
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutRelationBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`DELETE /v1/admin/relations` — remove one relation tuple (tenant or\nplatform: env admins govern their env's graph; platform tuples are\nre-seeded by enroll on the next `vertical init`).\nDelete relation.",
+        "operationId": "delete_relation",
+        "parameters": [
+          {
+            "name": "subject_type",
+            "in": "path",
+            "description": "The subject type.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_id",
+            "in": "path",
+            "description": "subject identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "relation",
+            "in": "path",
+            "description": "The relation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "object_type",
+            "in": "path",
+            "description": "The object type.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "object_id",
+            "in": "path",
+            "description": "object identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "path",
+            "description": "target env identifier.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/relations/check": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Check relation.",
+        "operationId": "check_relation",
+        "parameters": [
+          {
+            "name": "subject_type",
+            "in": "path",
+            "description": "The subject type.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_id",
+            "in": "path",
+            "description": "subject identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "relation",
+            "in": "path",
+            "description": "The relation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "object_type",
+            "in": "path",
+            "description": "The object type.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "object_id",
+            "in": "path",
+            "description": "object identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "path",
+            "description": "target env identifier.",
+            "required": true,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/relations/{id}/delete": {
+      "post": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "`POST /v1/admin/relations/{id}/delete` — row-action alias.\n`id` is the colon-joined tuple the RFW list emits\n(`subject_type:subject_id:relation:object_type:object_id`); parsed\nback-first (the last three segments are relation/object_type/object_id,\nthe first is subject_type, the middle rest is subject_id — tolerant of\ncolons inside subject ids).\nHandle admin delete relation path.",
+        "operationId": "admin_delete_relation_path",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Relation id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Caller lacks the policy scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:policy:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/ui/{page}": {
+      "get": {
+        "tags": [
+          "admin-ui"
+        ],
+        "summary": "Fetch admin ui.",
+        "operationId": "get_admin_ui",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "path",
+            "description": "RFW page name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RFW page definition (rendered by Sentin8:Dash)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks a post read/admin scope"
+          },
+          "404": {
+            "description": "Unknown page"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/{resource}": {
+      "get": {
+        "tags": [
+          "admin-ui"
+        ],
+        "summary": "`GET /v1/admin/{resource}` — returns a JSON array of admin data rows.\nFetch admin data.",
+        "operationId": "get_admin_data",
+        "parameters": [
+          {
+            "name": "resource",
+            "in": "path",
+            "description": "Admin data resource",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_env_id",
+            "in": "query",
+            "description": "Target env (RLS context)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The resource's rows for the RFW table",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Caller lacks a post read/admin scope"
+          },
+          "404": {
+            "description": "Unknown resource"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:read": []
+          }
+        ]
+      }
+    },
     "/v1/dlq": {
       "get": {
         "tags": [
@@ -188,6 +1347,63 @@
             "sentin8:post:write": []
           }
         ]
+      }
+    },
+    "/v1/gateways/{id}/delete": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`POST /v1/gateways/{id}/delete` — RFW alias of `DELETE /v1/gateways/{id}`.",
+        "operationId": "gateway_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Gateway id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gateway deleted (same contract as DELETE /v1/gateways/{id})"
+          },
+          "403": {
+            "description": "Missing post:write scope (platform-tier deletes require sys:admin)"
+          },
+          "404": {
+            "description": "Unknown gateway"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Handle health.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Liveness (version, build, active connections)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": []
       }
     },
     "/v1/messages": {
@@ -377,6 +1593,43 @@
         ]
       }
     },
+    "/v1/messages/{id}/replay": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "`POST /v1/messages/{id}/replay` — RFW alias of `POST /v1/dlq/{id}/replay`.",
+        "operationId": "message_replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "DLQ message id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message replayed (same contract as POST /v1/dlq/{id}/replay)"
+          },
+          "403": {
+            "description": "Missing post:write scope"
+          },
+          "404": {
+            "description": "Unknown DLQ entry"
+          }
+        },
+        "security": [
+          {
+            "sentin8:post:write": []
+          }
+        ]
+      }
+    },
     "/v1/send": {
       "post": {
         "tags": [
@@ -448,6 +1701,42 @@
           "scope": {
             "type": "string",
             "description": "The scope."
+          }
+        }
+      },
+      "CreatePolicySetBody": {
+        "type": "object",
+        "description": "`POST /v1/admin/policy-sets` — create a tenant policy set (name in body).\nReuses the local PUT core (validation + tenant origin + event + audit),\nthen redirects the RFW renderer to the editor page.\nThe createpolicysetbody type.",
+        "required": [
+          "policy_set_name",
+          "policies"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "The description."
+          },
+          "mode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The mode."
+          },
+          "policies": {
+            "type": "string",
+            "description": "The policies."
+          },
+          "policy_set_name": {
+            "type": "string",
+            "description": "The policy set name."
+          },
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The schema."
           }
         }
       },
@@ -579,6 +1868,119 @@
           }
         }
       },
+      "PolicyModeBody": {
+        "type": "object",
+        "description": "Shared body for the mode-flip aliases: `{\"policy_set_name\": \"…\", \"enabled\": bool}`.\nThe policymodebody type.",
+        "required": [
+          "policy_set_name"
+        ],
+        "properties": {
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "The enabled."
+          },
+          "policy_set_name": {
+            "type": "string",
+            "description": "The policy set name."
+          }
+        }
+      },
+      "PutAttributeBody": {
+        "type": "object",
+        "description": "`PUT /v1/admin/attributes` body — one principal attribute.\nThe putattributebody type.",
+        "required": [
+          "subject_id",
+          "attr_key",
+          "attr_value"
+        ],
+        "properties": {
+          "attr_key": {
+            "type": "string",
+            "description": "The attr key."
+          },
+          "attr_value": {
+            "description": "The attr value."
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "subject identifier."
+          }
+        }
+      },
+      "PutPolicySetBody": {
+        "type": "object",
+        "description": "The putpolicysetbody type.",
+        "required": [
+          "policies"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "The description."
+          },
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "The enabled."
+          },
+          "mode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The mode."
+          },
+          "policies": {
+            "type": "string",
+            "description": "The policies."
+          },
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The schema."
+          }
+        }
+      },
+      "PutRelationBody": {
+        "type": "object",
+        "description": "`PUT /v1/admin/relations` body — one relation tuple.\nThe putrelationbody type.",
+        "required": [
+          "subject_type",
+          "subject_id",
+          "relation",
+          "object_type",
+          "object_id"
+        ],
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "description": "object identifier."
+          },
+          "object_type": {
+            "type": "string",
+            "description": "The object type."
+          },
+          "relation": {
+            "type": "string",
+            "description": "The relation."
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "subject identifier."
+          },
+          "subject_type": {
+            "type": "string",
+            "description": "The subject type."
+          }
+        }
+      },
       "SendMessageRequest": {
         "type": "object",
         "description": "Request body for sendmessage.",
@@ -663,6 +2065,49 @@
           "status": {
             "type": "string",
             "description": "The status."
+          }
+        }
+      },
+      "TestPolicySetBody": {
+        "type": "object",
+        "description": "The testpolicysetbody type.",
+        "required": [
+          "policies",
+          "subject_id"
+        ],
+        "properties": {
+          "action": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Action to evaluate, defaults to the service's read scope.\nThe action."
+          },
+          "policies": {
+            "type": "string",
+            "description": "Candidate Shield policy text (not yet saved).\nThe policies."
+          },
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The schema."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The scopes."
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "Sample caller context to evaluate against.\nsubject identifier."
+          },
+          "token_tp": {
+            "type": "string",
+            "description": "The token tp."
           }
         }
       }

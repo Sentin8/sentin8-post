@@ -41,6 +41,15 @@ pub struct AppState {
 // ── Health ─────────────────────────────────────────────────────────────
 
 /// Handle health.
+#[utoipa::path(
+    get,
+    path = "/v1/health",
+    responses(
+        (status = 200, description = "Liveness (version, build, active connections)", body = serde_json::Value),
+    ),
+    security(),
+    tag = "meta",
+)]
 pub async fn health(State(_state): State<AppState>) -> Json<serde_json::Value> {
     let mut payload = serde_json::json!({"status": "ok", "service": "post", "version": sentin8::build_info::id(), "build": sentin8::build_info::build_hash()});
     if let Some(n) = sentin8::middleware::traffic_counter::process_active_connections() {

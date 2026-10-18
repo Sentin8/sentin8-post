@@ -127,9 +127,9 @@ pub fn routes(
             axum::routing::delete(handlers::delete_gateway),
         )
         // POST alias for RFW row_action_post (renderer only supports POST)
-        .route("/v1/gateways/{id}/delete", post(handlers::delete_gateway))
+        .route("/v1/gateways/{id}/delete", post(crate::rfw_aliases::gateway_delete))
         // POST alias for message replay
-        .route("/v1/messages/{id}/replay", post(handlers::replay_dlq))
+        .route("/v1/messages/{id}/replay", post(crate::rfw_aliases::message_replay))
         .route("/v1/gateways/test", post(handlers::test_gateway))
         // ── Policy-sets admin API ────────────────────────
         .route(

@@ -23,6 +23,7 @@ mod inbox_relay;
 mod openapi;
 mod policy;
 mod policy_admin;
+mod rfw_aliases;
 mod policy_reloader;
 mod registration;
 mod server;
