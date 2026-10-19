@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8 Post — multi-channel message delivery service.
+//! Sentin8 Post - multi-channel message delivery service.
 
 #![deny(missing_docs)]
 
@@ -13,13 +13,13 @@ pub mod admin_ui;
 pub mod auth;
 /// Environment configuration.
 pub mod config;
-/// HTTP handlers — message send, delivery status, gateways.
+/// HTTP handlers - message send, delivery status, gateways.
 pub mod handlers;
-/// Inbox relay — drains the inbox and delivers messages.
+/// Inbox relay - drains the inbox and delivers messages.
 pub mod inbox_relay;
 /// OpenAPI spec assembly.
 pub mod openapi;
-/// Shield (Sentin8:Policy) integration — shared bridge re-exports.
+/// Shield (Sentin8:Policy) integration - shared bridge re-exports.
 pub mod policy;
 pub mod rfw_aliases;
 /// Shield policy-admin surface handlers.

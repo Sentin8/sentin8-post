@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 // SPDX-License-Identifier: Apache-2.0
 
-//! Post inbox relay — drains `inbox` and delivers messages.
+//! Post inbox relay - drains `inbox` and delivers messages.
 //!
 //! Uses the same hybrid LISTEN/NOTIFY + safety poll model as Bus.
 //! An `AFTER INSERT` trigger on `inbox` fires `pg_notify('post_inbox_changed', '')`.
@@ -14,12 +14,12 @@
 //! 1. Creates a "View" channel delivery (always available, instant).
 //! 2. Produces a `notification.received` event to Bus (fire-and-forget)
 //! so BFF's SSE consumer pushes it to the user's app.
-//! 3. Attempts the external channels (email/sms/push/web_push/mail — v1
+//! 3. Attempts the external channels (email/sms/push/web_push/mail - v1
 //! stubs); a failure schedules the next attempt on the design backoff
 //! curve (1s, 5s, 30s, 2min, 10min) and lands the delivery in `post.dlq`
 //! when the retry budget is exhausted (post DESIGN §10).
 //! 4. Marks the message delivered once every applicable channel is
-//! terminal (sent/dlq) — a scheduled retry keeps it pending.
+//! terminal (sent/dlq) - a scheduled retry keeps it pending.
 
 use std::time::Duration;
 
@@ -39,7 +39,7 @@ fn retry_delay_secs(n: usize) -> i64 {
 }
 
 /// Retry budget for a delivery row: its own `max_retries`, capped by the
-/// design curve length — a row may only LOWER the curve budget
+/// design curve length - a row may only LOWER the curve budget
 /// (post DESIGN §10).
 fn retry_budget(max_retries: i32) -> usize {
     (max_retries.max(0) as usize).min(RETRY_DELAY_SECS.len())
@@ -67,14 +67,14 @@ async fn run(pool: sqlx::PgPool, bus: sentin8::bus::client::BusClient, listener_
             l
         }
         Err(e) => {
-            tracing::error!(error = %e, "failed to start PgListener — falling back to poll-only");
+            tracing::error!(error = %e, "failed to start PgListener - falling back to poll-only");
             run_poll_only(pool, bus, safety_poll, batch_size).await;
             return;
         }
     };
 
     if let Err(e) = listener.listen("post_inbox_changed").await {
-        tracing::error!(error = %e, "failed to LISTEN on post_inbox_changed — falling back to poll-only");
+        tracing::error!(error = %e, "failed to LISTEN on post_inbox_changed - falling back to poll-only");
         run_poll_only(pool, bus, safety_poll, batch_size).await;
         return;
     }
@@ -94,7 +94,7 @@ async fn run(pool: sqlx::PgPool, bus: sentin8::bus::client::BusClient, listener_
                 true
             }
             Ok(Err(e)) => {
-                tracing::error!(error = %e, "PgListener error — will reconnect");
+                tracing::error!(error = %e, "PgListener error - will reconnect");
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 match sqlx::postgres::PgListener::connect(&conn_str).await {
                     Ok(new_listener) => {
@@ -158,7 +158,7 @@ async fn run_poll_only(
 /// Drain one batch of undelivered messages.
 ///
 /// RLS: `post.inbox` is FORCE-RLS'd on (context_initialized, env_id) and
-/// the relay task has no tenant context of its own — the same silent-drain
+/// the relay task has no tenant context of its own - the same silent-drain
 /// incident class the outbox relay hit (crates/bus/outbox §6.7). Rows are
 /// therefore collected context-free and processed under per-row
 /// tenant-context transactions (`sentin8_set_tenant_context` on the SAME
@@ -206,7 +206,7 @@ async fn drain(
             Ok(Some(row)) => row,
             Ok(None) => continue, // row vanished between SELECT and read
             Err(e) => {
-                tracing::warn!(error = %e, message_id = %id, "post inbox relay row read failed — retried next pass");
+                tracing::warn!(error = %e, message_id = %id, "post inbox relay row read failed - retried next pass");
                 continue;
             }
         };
@@ -273,7 +273,7 @@ async fn drain(
             "unread_count": unread_count,
         });
 
-        // The relay is a background task — it produces on behalf of the
+        // The relay is a background task - it produces on behalf of the
         // service itself (M2M token), not the original user. The
         // publisher_id_token is the relay's M2M token if available;
         // publisher_subject is the service name for audit.
@@ -284,28 +284,28 @@ async fn drain(
             payload: notification_payload,
             correlation_id: None,
             idempotency_key: Some(id.to_string()),
-            publisher_id_token: None, // Relay M2M token — set if available
+            publisher_id_token: None, // Relay M2M token - set if available
             publisher_subject: Some("sentin8:post".into()),
         };
         if let Err(e) = bus.produce(&produce_req).await {
             tracing::debug!(error = %e, message_id = %id, "post: notification produce failed (fire-and-forget)");
         }
 
-        // 3. Attempt the external channels (stub providers — post DESIGN
+        // 3. Attempt the external channels (stub providers - post DESIGN
         // §10; the real adapters replace the stubs in place later).
         // Preference filter (POST-5): a recipient who muted this category
         // (or is inside their quiet-hours window) skips the external
-        // channels — the View channel (in-app, step 1) always delivered,
+        // channels - the View channel (in-app, step 1) always delivered,
         // so the record of truth is never lost (post DESIGN §10).
         let prefs = user_delivery_preferences(pool, env_id, recipient_user_id).await;
         if let Some(prefs) = &prefs {
             if prefs.muted.iter().any(|c| c == &category) {
-                tracing::debug!(message_id = %id, category = %category, "post: category muted by recipient — external channels skipped");
+                tracing::debug!(message_id = %id, category = %category, "post: category muted by recipient - external channels skipped");
                 finalize_inbox(pool, id, env_id).await?;
                 continue;
             }
             if prefs.quiet_now {
-                tracing::debug!(message_id = %id, category = %category, "post: recipient in quiet hours — external channels deferred (view delivered)");
+                tracing::debug!(message_id = %id, category = %category, "post: recipient in quiet hours - external channels deferred (view delivered)");
                 finalize_inbox(pool, id, env_id).await?;
                 continue;
             }
@@ -321,12 +321,12 @@ async fn drain(
         )
         .await
         {
-            tracing::warn!(error = %e, message_id = %id, "post: external delivery attempt failed — retried next pass");
+            tracing::warn!(error = %e, message_id = %id, "post: external delivery attempt failed - retried next pass");
             continue;
         }
 
         // 4. Mark delivered ONLY when every applicable channel is terminal
-        // — a scheduled retry keeps the row pending in queries.
+        // - a scheduled retry keeps the row pending in queries.
         finalize_inbox(pool, id, env_id).await?;
     }
     Ok(count)
@@ -366,7 +366,7 @@ async fn drain_one(
 }
 
 /// Mark the inbox row delivered only when EVERY delivery row is terminal
-/// (`sent`/`delivered`/`dlq`) — any `pending` row (a scheduled retry)
+/// (`sent`/`delivered`/`dlq`) - any `pending` row (a scheduled retry)
 /// keeps the message pending in queries (post DESIGN §10).
 async fn finalize_inbox(
     pool: &sqlx::PgPool,
@@ -396,7 +396,7 @@ async fn finalize_inbox(
 
 /// A recipient's resolved delivery preferences (POST-5).
 struct UserPreferences {
-    /// Categories the recipient muted — external channels skip them.
+    /// Categories the recipient muted - external channels skip them.
     muted: Vec<String>,
     /// True when the current hour falls inside the recipient's quiet-hours
     /// window (`quiet_hours_start..quiet_hours_end`, UTC hours; a window
@@ -406,7 +406,7 @@ struct UserPreferences {
 
 /// Read one recipient's delivery preferences (POST-5). `None` = no
 /// preference row (everything delivers). The read runs under the env's
-/// tenant context (FORCE RLS); a DB error degrades to `None` — a
+/// tenant context (FORCE RLS); a DB error degrades to `None` - a
 /// preferences outage must never drop notifications.
 async fn user_delivery_preferences(
     pool: &sqlx::PgPool,
@@ -450,9 +450,9 @@ async fn user_delivery_preferences(
 /// inbox row carries `metadata.template_key`; `metadata.locale` selects
 /// the locale row with an `'en'` fallback. `{{var}}` substitution draws
 /// from `metadata.template_vars` plus the resolved branding
-/// (`primary_color`, `logo_url` from `sys.branding` — env override over
+/// (`primary_color`, `logo_url` from `sys.branding` - env override over
 /// org base, non-empty wins; the sys cross-schema read is the declared
-/// branding lookup). `Ok(None)` = no template requested/resolvable — the
+/// branding lookup). `Ok(None)` = no template requested/resolvable - the
 /// caller falls back to the producer's literal subject/body. Best-effort:
 /// a broken template never blocks delivery.
 async fn render_template(
@@ -495,7 +495,7 @@ async fn render_template(
     .bind(key)
     .fetch_optional(&mut *tx)
     .await?);
-    // Branding resolves from sys.branding — the declared cross-schema read
+    // Branding resolves from sys.branding - the declared cross-schema read
     // (post README §7; platform plane, org base → env override).
     let branding: Option<(Option<String>, Option<String>)> =
         sqlx::query_as::<_, (Option<String>, Option<String>)>(
@@ -544,7 +544,7 @@ async fn render_template(
     Ok(Some((render(&subject_tpl), render(&body_tpl))))
 }
 
-/// Which external gateway channels apply to a message — the stub dispatch
+/// Which external gateway channels apply to a message - the stub dispatch
 /// matrix keyed by category + recipient (`sms` rides
 /// `metadata.recipient_phone`, read inside the stub itself; mirrored by
 /// tests/policy.rs).
@@ -570,7 +570,7 @@ fn external_channels(category: &str, recipient_email: Option<&str>) -> Vec<&'sta
 /// Gateway config: any enabled gateway row for this env turns the external
 /// channels ON; with no gateway configured no delivery rows are created at
 /// all (post DESIGN §10). The `config` JSONB may carry `simulate_failure:
-/// true` — a test seam that makes every attempt fail with "simulated
+/// true` - a test seam that makes every attempt fail with "simulated
 /// gateway failure" so the backoff curve + DLQ land are exercisable
 /// without a real provider (the real adapter drops straight in later).
 /// A `secret_ref` is resolved at delivery time and never logged
@@ -590,7 +590,7 @@ async fn attempt_external_delivery(
     }
 
     // Gateway lookup must run under the env's tenant context (FORCE RLS
-    // silences a context-free SELECT — post DESIGN §5).
+    // silences a context-free SELECT - post DESIGN §5).
     let cfg = match gateway_config_for_env(pool, env_id).await? {
         Some(c) => c,
         None => return Ok(()),
@@ -609,7 +609,7 @@ async fn attempt_external_delivery(
                 tracing::debug!(message_id = %inbox_id, "post: gateway credential resolved (never logged)");
             }
             Err(e) => {
-                tracing::warn!(error = %e, "post: gateway secret_ref does not resolve — delivery proceeds without credential");
+                tracing::warn!(error = %e, "post: gateway secret_ref does not resolve - delivery proceeds without credential");
             }
         }
     }
@@ -617,7 +617,7 @@ async fn attempt_external_delivery(
     // Template rendering (POST-7): when the inbox row carries
     // `metadata.template_key` (and optionally `metadata.locale`), the
     // subject/body are rendered from `post.templates` with `{{var}}`
-    // substitution — branding (`primary_color`, `logo_url`) resolves from
+    // substitution - branding (`primary_color`, `logo_url`) resolves from
     // `sys.branding` into the render vars (non-empty wins, org base →
     // env override). Unresolvable template → falls back to the producer's
     // literal subject/body (never blocks delivery).
@@ -684,7 +684,7 @@ async fn external_attempt(
         .execute(&mut *tx)
         .await
         .map_err(|e| format!("delivery row context: {e}"))?;
-    // Upsert the delivery row — retry passes land on the SAME row the
+    // Upsert the delivery row - retry passes land on the SAME row the
     // first attempt created (post DESIGN §5 idempotency).
     let ensured = sqlx::query(
         r#"INSERT INTO deliveries (inbox_id, env_id, channel, status)
@@ -719,7 +719,7 @@ async fn external_attempt(
     let max_retries: i32 = row.get("max_retries");
     let status: String = row.get("status");
     // A spent budget (or terminal row) means this attempt is a stray from
-    // a concurrent pass — nothing to dispatch; the schedule call settles.
+    // a concurrent pass - nothing to dispatch; the schedule call settles.
     if status == "dlq" || retry_count as usize >= retry_budget(max_retries) {
         let _ = tx.commit().await;
         return Ok(());
@@ -738,7 +738,7 @@ async fn external_attempt(
         .await
         .map_err(|e| format!("delivery attempt commit: {e}"))?;
 
-    // ── Gateway adapter dispatch (v1: stubs — post DESIGN §10) ──
+    // ── Gateway adapter dispatch (v1: stubs - post DESIGN §10) ──
     // Stubs log and succeed; `simulate_failure` turns every attempt into
     // "simulated gateway failure" so the retry curve + DLQ path are
     // exercisable without a real provider.
@@ -836,7 +836,7 @@ async fn schedule_retry_or_dlq(
         tracing::warn!(message_id = %inbox_id, channel = %channel, retry_count = retry_count, "post: delivery moved to DLQ");
     } else {
         // Next delay: the curve index is the attempts made so far
-        // (retry_count) — 1 attempt failed → 5s, 2 → 30s, … (post
+        // (retry_count) - 1 attempt failed → 5s, 2 → 30s, … (post
         // DESIGN §10: 1s, 5s, 30s, 2min, 10min → DLQ).
         let delay = retry_delay_secs(retry_count as usize);
         sqlx::query(
@@ -857,7 +857,7 @@ async fn schedule_retry_or_dlq(
 }
 
 /// Drain one batch of due pending external deliveries
-/// (`next_retry_at <= now()`) — the second half of the drain loop
+/// (`next_retry_at <= now()`) - the second half of the drain loop
 /// (post DESIGN §10). Per-env context discipline as in [`drain`].
 async fn drain_retries(pool: &sqlx::PgPool, batch_size: i64) -> Result<usize, sqlx::Error> {
     // Due retry rows via the owner-side SECURITY DEFINER helper (the
@@ -865,7 +865,7 @@ async fn drain_retries(pool: &sqlx::PgPool, batch_size: i64) -> Result<usize, sq
     // then re-attempt each under its own env context.
     let due: Vec<(uuid::Uuid, uuid::Uuid, String)> = sqlx::query(
         // Schema-qualified: the helper lives in post's OWN schema (SECURITY
-        // DEFINER owner-side helper — post DESIGN §5); the relay role's
+        // DEFINER owner-side helper - post DESIGN §5); the relay role's
         // search_path resolves it, but the explicit name keeps the
         // cross-namespace contract visible at the call site.
         "SELECT inbox_id, env_id, channel FROM post.post_due_retry_rows($1)",
@@ -933,7 +933,7 @@ async fn drain_retries(pool: &sqlx::PgPool, batch_size: i64) -> Result<usize, sq
 }
 
 /// The env's first enabled gateway `config` (RLS-scoped; `None` when no
-/// gateway row is visible — post DESIGN §5).
+/// gateway row is visible - post DESIGN §5).
 async fn gateway_config_for_env(
     pool: &sqlx::PgPool,
     env_id: uuid::Uuid,
@@ -988,7 +988,7 @@ async fn retry_delivery_context(
 
 /// Read the `simulate_failure` test seam from the env's first enabled
 /// gateway config (`false` when no gateway row is visible). Runs under
-/// the env's tenant context — a context-free SELECT is silenced by
+/// the env's tenant context - a context-free SELECT is silenced by
 /// FORCE RLS (post DESIGN §5).
 async fn gateway_simulate_failure(pool: &sqlx::PgPool, env_id: uuid::Uuid) -> bool {
     let mut tx = match pool.begin().await {
@@ -1047,10 +1047,10 @@ async fn settle_skipped_channel(
 /// adapters swap in behind the same signature (post DESIGN §10).
 /// Gateway adapter dispatch (POST-4): the email channel rides a real
 /// SMTP relay when the gateway row declares `gateway_url` (an HTTP relay
-/// endpoint — self-hostable, e.g. a local SMTP-to-HTTP bridge); every
+/// endpoint - self-hostable, e.g. a local SMTP-to-HTTP bridge); every
 /// other channel (and email without a relay) keeps the stub behavior.
 /// Credentials travel via `secret_ref` (resolved at delivery time, never
-/// logged — post DESIGN §5).
+/// logged - post DESIGN §5).
 async fn gateway_dispatch(
     pool: &sqlx::PgPool,
     inbox_id: uuid::Uuid,
@@ -1082,7 +1082,7 @@ async fn gateway_dispatch(
 
 /// Real SMTP delivery through the HTTP relay: POST the message to the
 /// configured relay endpoint (the relay owns the SMTP conversation with
-/// the upstream MTA). Auth rides `secret_ref` resolution — the relay's
+/// the upstream MTA). Auth rides `secret_ref` resolution - the relay's
 /// credential is resolved per-delivery and never logged.
 async fn smtp_relay_dispatch(
     pool: &sqlx::PgPool,
@@ -1243,7 +1243,7 @@ mod tests {
         assert_eq!(retry_delay_secs(50), 600);
     }
 
-    /// Budget: the row's `max_retries` capped by the curve length — a row
+    /// Budget: the row's `max_retries` capped by the curve length - a row
     /// may only LOWER the curve budget (post DESIGN §10).
     #[test]
     fn retry_budget_caps_max_retries() {

@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8:Post Admin UI handlers — RFW definitions.
+//! Sentin8:Post Admin UI handlers - RFW definitions.
 //! Served from `GET /v1/admin/ui/{page}`, rendered by Sentin8:Dash at runtime.
 
 use crate::handlers::AppState;
@@ -101,7 +101,7 @@ pub async fn get_admin_ui(
                         field_type: FormFieldType::Select,
                         required: true,
                         placeholder: None,
-                        // Tenant-scoped by default — the 'sys'/'org' scopes
+                        // Tenant-scoped by default - the 'sys'/'org' scopes
                         // are the platform plane and REQUIRE the platform
                         // admin scope (post DESIGN §5); a default of 'sys'
                         // made every operator-created gateway fail the
@@ -243,7 +243,7 @@ pub async fn get_admin_ui(
             .build(),
         // ── Policy Studio pages ────────────────
         // Served from the SHARED page constructors (sentin8::rfw::policy_page
-        // — identical definitions for every adopting service); the pilot's
+        // - identical definitions for every adopting service); the pilot's
         // local copies were consolidated. Row `id` = the policy-
         // set name / colon-joined tuple so the renderer's {id} substitution
         // resolves the aliases; the editor is generated per set with the
@@ -296,7 +296,7 @@ pub async fn get_admin_ui(
     ))
 }
 
-/// `GET /v1/admin/{resource}` — returns a JSON array of admin data rows.
+/// `GET /v1/admin/{resource}` - returns a JSON array of admin data rows.
 /// Fetch admin data.
 #[utoipa::path(
     get,
@@ -344,7 +344,7 @@ pub async fn get_admin_data(
     // RLS: `inbox`/`gateways`/`dlq` are FORCE-RLS'd on (context_initialized,
     // env_id); set_config(…, true) is transaction-local, so the context +
     // queries run inside ONE explicit transaction on the same connection
-    // (post DESIGN §6.4) — a bare-pool read hides every row ("No data.").
+    // (post DESIGN §6.4) - a bare-pool read hides every row ("No data.").
     let mut tx = state.pool.begin().await.map_err(|e| {
         (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -397,7 +397,7 @@ pub async fn get_admin_data(
                 "user_id": row.get::<Option<String>, &str>("user_id").unwrap_or_default(),
                 "muted": row.get::<Vec<String>, &str>("muted_categories").join(", "),
                 "quiet": match (row.get::<Option<String>, &str>("quiet_hours_start"), row.get::<Option<String>, &str>("quiet_hours_end")) {
-                    (Some(s), Some(e)) => format!("{s}:00–{e}:00"),
+                    (Some(s), Some(e)) => format!("{s}:00-{e}:00"),
                     _ => "".to_string(),
                 },
             })).collect()).unwrap_or_default(),
@@ -419,7 +419,7 @@ pub async fn get_admin_data(
             .bind(env_id)
             .fetch_all(&mut *tx).await
             .map(|rows| rows.iter().map(|row| serde_json::json!({
- // id = the set name — the RFW renderer substitutes {id} in
+ // id = the set name - the RFW renderer substitutes {id} in
  // row-action endpoints.
                 "id": row.get::<Option<String>, &str>("policy_set_name").unwrap_or_default(),
                 "policy_set_name": row.get::<Option<String>, &str>("policy_set_name").unwrap_or_default(),
@@ -465,7 +465,7 @@ pub async fn get_admin_data(
                 let ot = row.get::<Option<String>, &str>("object_type").unwrap_or_default();
                 let oid = row.get::<Option<String>, &str>("object_id").unwrap_or_default();
                 serde_json::json!({
- // id = colon-joined tuple — the renderer's {id} token
+ // id = colon-joined tuple - the renderer's {id} token
  // feeds the single-segment delete alias.
                     "id": format!("{st}:{sid}:{rel}:{ot}:{oid}"),
                     "subject_type": st,
@@ -488,7 +488,7 @@ pub async fn get_admin_data(
                 let sid = row.get::<Option<String>, &str>("subject_id").unwrap_or_default();
                 let key = row.get::<Option<String>, &str>("attr_key").unwrap_or_default();
                 serde_json::json!({
- // id = `subject_id:attr_key` — the renderer's {id} token
+ // id = `subject_id:attr_key` - the renderer's {id} token
  // feeds the single-segment delete alias.
                     "id": format!("{sid}:{key}"),
                     "subject_id": sid,

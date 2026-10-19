@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 // SPDX-License-Identifier: Apache-2.0
 
-// Post inbox-first relay tests — testing-strategy §3 (TEST-1 in
+// Post inbox-first relay tests - testing-strategy §3 (TEST-1 in
 // services/post/BACKLOG.md).
 //
 // The relay loop (`inbox_relay.rs`) is DB-bound; the pure seams are its
@@ -12,18 +12,18 @@
 // (`sentin8::bus::contracts::ProduceRequest`). The event payload-completeness
 // rule (AGENTS.md "event first, API second") is asserted: the
 // `notification.received` envelope must carry everything the BFF SSE
-// consumer needs without a callback — user_id, title, body, category,
+// consumer needs without a callback - user_id, title, body, category,
 // resource ids, unread_count.
 //
 // Handler wire formats (`CreateGatewayRequest`, `MessageSummary` fields)
-// are exercised through serde. Pure tests — run under `make test-rust`.
+// are exercised through serde. Pure tests - run under `make test-rust`.
 
 use serde_json::json;
 
 // ── notification.received envelope completeness (relay step 2) ─────────
 
 /// Rebuild the exact `ProduceRequest` the relay constructs for a drained
-/// message — kept in lockstep with `inbox_relay.rs::drain`. If the relay
+/// message - kept in lockstep with `inbox_relay.rs::drain`. If the relay
 /// envelope drifts (field added/renamed), these tests flag it because the
 /// BFF SSE consumer depends on this exact shape.
 fn relay_notification_envelope(
@@ -60,7 +60,7 @@ fn relay_notification_envelope(
 fn notification_event_name_uses_colon_convention() {
     // AGENTS.md event naming: vertical:service:resource:operation, colons only.
     // Post is a platform service whose event namespace is `sentin8:notification:*`
-    // (service=notification, resource=received/read) — matching what the
+    // (service=notification, resource=received/read) - matching what the
     // relay actually emits and what BFF's SSE consumer subscribes to.
     let req = relay_notification_envelope(
         uuid::Uuid::new_v4(),
@@ -145,7 +145,7 @@ fn produce_request_roundtrip() {
 
 // ── Gateway-stub dispatch matrix (relay step 3, Epic 18.2) ──────────────
 
-/// Which gateway channels fire for a message — mirrors the category /
+/// Which gateway channels fire for a message - mirrors the category /
 /// recipient decisions in `inbox_relay.rs::drain` (stubs log; the dispatch
 /// decision itself is the contract).
 fn gateway_dispatch(

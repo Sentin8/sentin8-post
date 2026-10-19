@@ -5,14 +5,14 @@
 
 //! Sentin8:Policy integration for Post ( pilot).
 //!
-//! Thin re-export of the shared bridge (`sentin8::shield::runtime`) — the
+//! Thin re-export of the shared bridge (`sentin8::shield::runtime`) - the
 //! consolidated implementation every service uses. Post (as pilot) uses the
 //! full step-5 evaluation: live roles + relation slice +
 //! principal attributes , each degrading independently (fail-closed).
 //!
-//! - `engine` / `spawn_hot_reload` — boot + hot-reload (/);
-//! - `require_policy` — step 5 glue: evaluate + convert enforced deny to 403;
-//! - `policy_bus_client` — the M2M DCR-backed Bus consumer client.
+//! - `engine` / `spawn_hot_reload` - boot + hot-reload (/);
+//! - `require_policy` - step 5 glue: evaluate + convert enforced deny to 403;
+//! - `policy_bus_client` - the M2M DCR-backed Bus consumer client.
 
 #[allow(unused_imports)]
 pub use sentin8::shield::runtime::{

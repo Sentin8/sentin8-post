@@ -18,14 +18,14 @@ pub async fn build_state(
 ) -> anyhow::Result<crate::handlers::AppState> {
     let config = crate::config::PostConfig::from_env();
 
-    // DBX : ONE pool under `sentin8_post_service` (NOBYPASSRLS) — the
+    // DBX : ONE pool under `sentin8_post_service` (NOBYPASSRLS) - the
     // send API writes post.inbox; the relay drains it under per-row tenant
     // context. The retired BYPASSRLS `sentin8_post_relay` role + relay pool
     // are gone.
     let pool = core.pool.clone();
 
     // Bus client (for producing notification.received events on View
-    // delivery) — auth DESIGN §4.3f: the `post` CERTIFICATE
+    // delivery) - auth DESIGN §4.3f: the `post` CERTIFICATE
     // is the identity; the mint retries while the fleet boots.
     let bus_client = loop {
         match sentin8::bus::client::BusClient::for_workload(
@@ -43,7 +43,7 @@ pub async fn build_state(
         }
     };
 
-    // Spawn the inbox relay — drains inbox → resolves channels → dispatches
+    // Spawn the inbox relay - drains inbox → resolves channels → dispatches
     // and produces notification:received to Bus. The client stays local to
     // the relay; handlers emit events via the local outbox (§6.7), not the
     // Bus client.
@@ -56,22 +56,22 @@ pub async fn build_state(
     // ── Sentin8:Policy ( pilot) ────────────────────────────────────
     // Load the service's policy sets; an unparsable policy text REFUSES TO
     // START (fail-closed at boot, design ). The hot-reload task consumes
-    // the `policy` stream as a direct consumer — with its OWN
+    // the `policy` stream as a direct consumer - with its OWN
     // M2M workload (`sentin8:post-policy`, bus:consume). The producer client
     // below carries only bus:produce; reusing it made every consume 403
     // (COLD-START-1).
-    // ── Sentin8:Policy (— shell-owned boot): the shell's
+    // ── Sentin8:Policy (- shell-owned boot): the shell's
     // boot step 8 already booted the engine (load via the post-policy DCR
     // consumer, shared step-5 deps, hot-reload, stat emitter). Post only
-    // CONSUMES the engine — no second engine or DCR registration here.
+    // CONSUMES the engine - no second engine or DCR registration here.
     let policy_engine = core.admin.policy.clone();
 
     // auth DESIGN §4.3f: boot-load the workload registry map (the
-    // token-free authorization record) for the cert-first handler gate —
+    // token-free authorization record) for the cert-first handler gate -
     // sys's post pusher presents the `sys-post` certificate on every
     // notification send; a bearer-only gate 401s it forever (the 92k/day
     // retry loop, CAPTCPU-1 item 1). Fail-open-with-warning on an
-    // unreachable Valkey at boot — the bearer path (user/delegated)
+    // unreachable Valkey at boot - the bearer path (user/delegated)
     // serves while certificate-workload calls fail-closed until the
     // next boot (the map is normally published by enroll BEFORE
     // services start; func carries the same fallback).
@@ -81,7 +81,7 @@ pub async fn build_state(
         {
             Ok(map) => map,
             Err(e) => {
-                tracing::warn!(error = %e, "post: workload registry map unavailable at boot — certificate-workload calls fail-closed until next boot");
+                tracing::warn!(error = %e, "post: workload registry map unavailable at boot - certificate-workload calls fail-closed until next boot");
                 sentin8::auth::workload_registry::WorkloadMap::boot_load_empty("sentin8:post")
             }
         };
@@ -99,7 +99,7 @@ pub async fn build_state(
 /// Add this service's routes onto the shell-provided router. The shell
 /// owns the boot sequence, state binding, OpenAPI merge and the standard
 /// middleware stack; this adds ONLY routes (including the service's own
-/// `/v1/health` — custom payload).
+/// `/v1/health` - custom payload).
 pub fn routes(
     router: axum::Router<crate::handlers::AppState>,
 ) -> axum::Router<crate::handlers::AppState> {
@@ -146,7 +146,7 @@ pub fn routes(
             "/v1/admin/policy-sets/{name}/test",
             post(crate::policy_admin::test_policy_set),
         )
-        // RFW POST-alias row actions (Dash 28.14 — renderer is POST-only).
+        // RFW POST-alias row actions (Dash 28.14 - renderer is POST-only).
         .route(
             "/v1/admin/policy-sets/enforce",
             post(crate::policy_admin::admin_enforce_policy_set),

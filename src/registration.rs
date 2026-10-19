@@ -94,12 +94,12 @@ const SQL_2_PREFERENCES_TEMPLATES: &str = include_str!("../sql/v2_preferences_te
 
 /// Default declarative policy sets (Sentin8:Policy design /):
 /// action-granular scope permits over the LIVE effective scope set. Seeded
-/// `origin='platform'`, `mode='enforced'` ( — step 5 is
+/// `origin='platform'`, `mode='enforced'` ( - step 5 is
 /// the only gate; shadow is the emergency one-UPDATE rollback lever only).
 const POLICIES: &[PolicySetDecl] = &[
     PolicySetDecl {
         policy_set_name: "scope-mirror",
-        description: "Action-granular scope permits for sentin8:post over the LIVE effective scope set. Enforced — step 5 is the only gate.",
+        description: "Action-granular scope permits for sentin8:post over the LIVE effective scope set. Enforced - step 5 is the only gate.",
         policies: "permit(principal, action == Action::\"sentin8:post:read\", resource) when { principal.scopes.contains(\"sentin8:post:read\") };\npermit(principal, action == Action::\"sentin8:post:read\", resource) when { principal.scopes.contains(\"sentin8:post:admin\") };\npermit(principal, action == Action::\"sentin8:post:write\", resource) when { principal.scopes.contains(\"sentin8:post:write\") };\npermit(principal, action == Action::\"sentin8:post:write\", resource) when { principal.scopes.contains(\"sentin8:post:admin\") };\npermit(principal, action == Action::\"sentin8:post:policy:read\", resource) when { principal.scopes.contains(\"sentin8:post:policy:read\") };\npermit(principal, action == Action::\"sentin8:post:policy:write\", resource) when { principal.scopes.contains(\"sentin8:post:policy:write\") };",
         schema: None,
         mode: "enforced",
@@ -107,7 +107,7 @@ const POLICIES: &[PolicySetDecl] = &[
     },
 ];
 
-/// Default ReBAC relation tuples — none for post today; the
+/// Default ReBAC relation tuples - none for post today; the
 /// env admin authors their own graph via the relations admin API.
 const RELATIONS: &[RelationDecl] = &[];
 
@@ -122,7 +122,7 @@ fn openapi_spec() -> serde_json::Value {
 /// With `--section=<name>`, outputs only that section as a standalone JSON value.
 /// M2M DCR workload grants (self-registration ): this
 /// service's own `certless:<workload>` rows, upserted by `vertical enroll`.
-/// The static auth seed is retired — this declaration is the ONLY
+/// The static auth seed is retired - this declaration is the ONLY
 /// provisioning path ( "DCR is dynamic").
 /// Cover BOTH the full-identity `-policy` spelling (policy_bus_client) and
 /// the bare `{short}-policy` spelling (stat_emit); the gate's superset
@@ -148,7 +148,7 @@ const M2M_GRANTS: &[sentin8::registration::M2mGrant] = &[
         workload: "post-policy",
         scopes: &["sentin8:bus:consume", "sentin8:stat:measure"],
     },
-    // TLS-RLS-4 (design/sentin8-vertical-data-plane-contract.md §VDC.7): the database-free HostContextResolver’s resolve workload — cache miss calls Sys `GET /v1/resolve/hostname`.
+    // TLS-RLS-4 (design/sentin8-vertical-data-plane-contract.md §VDC.7): the database-free HostContextResolver’s resolve workload - cache miss calls Sys `GET /v1/resolve/hostname`.
     sentin8::registration::M2mGrant {
         workload: "sentin8-post-tls",
         scopes: &["sentin8:sys:instances:read"],
@@ -164,17 +164,17 @@ pub fn print(section: Option<String>) -> anyhow::Result<()> {
         // Admin scope declarations for the role registry: the `sentin8:post:admin`
         // role carries the granular scopes its handlers gate on
         // (`sentin8:post:read`, `sentin8:post:write`). `sentin8:post:admin` itself is a role NAME,
-        // not a scope the handlers accept — without the granular entries
+        // not a scope the handlers accept - without the granular entries
         // the provisioned role would carry a scope no handler checks.
         admin_scopes: &[
             AdminScope::Tuple("sentin8:post:admin", "sentin8:post:read"),
             AdminScope::Tuple("sentin8:post:admin", "sentin8:post:write"),
             // Policy-admin surface (policy design ; per-service
-            // scope) — the scope-mirror set (line ~81) mirrors these two
+            // scope) - the scope-mirror set (line ~81) mirrors these two
             // actions, so the provisioned admin role must carry them.
             // Incident : the pair was missing here (every other
             // service registers it), so `GET /v1/admin/policy-sets` denied
-            // 403 for the org admin — the e2e policy suite could not run.
+            // 403 for the org admin - the e2e policy suite could not run.
             AdminScope::Tuple("sentin8:post:admin", "sentin8:post:policy:read"),
             AdminScope::Tuple("sentin8:post:admin", "sentin8:post:policy:write"),
         ],

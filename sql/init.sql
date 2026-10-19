@@ -3,13 +3,13 @@
 -- SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 -- SPDX-License-Identifier: Apache-2.0
 
--- Sentin8:Post — multi-channel message delivery service.
+-- Sentin8:Post - multi-channel message delivery service.
 --
 -- Sentin8:Post owns four tables:
---   post.inbox       — the transactional inbox (producers INSERT here)
---   post.deliveries  — per-channel delivery attempts
---   post.gateways    — configurable gateways at sys/org/env scope
---   post.dlq         — dead-letter queue for exhausted retries
+--   post.inbox       - the transactional inbox (producers INSERT here)
+--   post.deliveries  - per-channel delivery attempts
+--   post.gateways    - configurable gateways at sys/org/env scope
+--   post.dlq         - dead-letter queue for exhausted retries
 --
 -- Producers (Sentin8:Auth, Bank8:Ledger, Bank8:Payments, Sentin8:Sys, etc.) INSERT into post.inbox
 -- in the same Sentin8:DB transaction as their domain change. Sentin8:Post's relay
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS post.deliveries (
 
 CREATE INDEX IF NOT EXISTS idx_post_deliveries_inbox ON post.deliveries (inbox_id);
 -- One delivery row per (inbox, channel): the retry machinery re-attempts
--- onto the SAME row (retry_count accumulates; post DESIGN §5/§10) — a
+-- onto the SAME row (retry_count accumulates; post DESIGN §5/§10) - a
 -- re-drain of an inbox row with a scheduled retry must not duplicate rows.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_post_deliveries_inbox_channel
     ON post.deliveries (inbox_id, channel);
@@ -112,7 +112,7 @@ CREATE INDEX IF NOT EXISTS idx_post_dlq_env ON post.dlq (env_id, created_at DESC
 -- ── RLS ────────────────────────────────────────────────────────────────
 -- DBX (§6.7): post.inbox is written ONLY by Post's send API (running under
 -- `sentin8_post_service`); the producing service's identity arrives with the
--- verified M2M token — no PG-role-derived stream-family pattern. Tenant
+-- verified M2M token - no PG-role-derived stream-family pattern. Tenant
 -- isolation stays the env_id match.
 ALTER TABLE post.inbox ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post.inbox FORCE ROW LEVEL SECURITY;
@@ -160,15 +160,15 @@ DROP POLICY IF EXISTS post_dlq_insert ON post.dlq;
 CREATE POLICY post_dlq_insert ON post.dlq FOR INSERT
     WITH CHECK (sentin8_context_initialized() AND (sentin8_bypass_rls() OR (env_id = sentin8_current_env_id())));
 
--- post.gateways: scope-based RLS — sys visible to org admins, org to org members, env to env members.
+-- post.gateways: scope-based RLS - sys visible to org admins, org to org members, env to env members.
 ALTER TABLE post.gateways ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post.gateways FORCE ROW LEVEL SECURITY;
 -- Gateway tiers (post DESIGN §5): every row is env-pinned (sys/org rows
--- live in the system env, env rows in the target env — the handler sets
+-- live in the system env, env rows in the target env - the handler sets
 -- the context to the same env it binds the row to). Platform-tier rows
 -- (sys/org) additionally require the platform-admin scope stamp on the
--- mutating context — the RLS mirror of the handler's `sentin8:sys:admin`
--- 403 gate. The former `sentin8_bypass_rls()` branches are dead (§6.7 —
+-- mutating context - the RLS mirror of the handler's `sentin8:sys:admin`
+-- 403 gate. The former `sentin8_bypass_rls()` branches are dead (§6.7 -
 -- no role carries BYPASSRLS) and removed.
 DROP POLICY IF EXISTS post_gateways_select ON post.gateways;
 CREATE POLICY post_gateways_select ON post.gateways FOR SELECT
@@ -239,9 +239,9 @@ CREATE TRIGGER post_inbox_notify_trigger
 
 -- ── Grants (DBX) ──
 -- post.inbox is written by Post's send API AND by the listed inbox-first
--- producer sys (invitation sent/accepted post-mail — sys DESIGN §2):
+-- producer sys (invitation sent/accepted post-mail - sys DESIGN §2):
 -- a single, explicitly declared producer INSERT grant. post.deliveries/dlq
--- by the in-post relay — under `sentin8_post_service`. The
+-- by the in-post relay - under `sentin8_post_service`. The
 -- `sentin8_post_relay` BYPASSRLS role is RETIRED (§6.7).
 GRANT USAGE ON SCHEMA post TO sentin8_post_service;
 GRANT SELECT, INSERT, UPDATE ON post.inbox TO sentin8_post_service;
@@ -332,7 +332,7 @@ CREATE POLICY audit_journal_dml ON post.audit_journal
     USING (sentin8_context_initialized() AND env_id = sentin8_current_env_id())
     WITH CHECK (sentin8_context_initialized() AND env_id = sentin8_current_env_id());
 
--- ── Grants (after every table exists — GRANT on a not-yet-created table
+-- ── Grants (after every table exists - GRANT on a not-yet-created table
 -- aborts the whole init migration on a fresh bootstrap) ────────────────
 GRANT SELECT, INSERT, UPDATE, DELETE ON post.outbox TO sentin8_post_service;
 GRANT SELECT, INSERT, UPDATE, DELETE ON post.audit_journal TO sentin8_post_service;

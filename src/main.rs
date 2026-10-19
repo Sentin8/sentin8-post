@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8 Post — multi-channel message delivery service.
+//! Sentin8 Post - multi-channel message delivery service.
 //!
 //! See.
 //!

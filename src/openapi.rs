@@ -61,7 +61,7 @@ use crate::handlers;
     )),
     security(),
     tags(
-        (name = "post", description = "Sentin8:Post admin API — messages, gateways, DLQ"),
+        (name = "post", description = "Sentin8:Post admin API - messages, gateways, DLQ"),
     ),
 )]
 pub struct PostOpenApi;

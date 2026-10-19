@@ -10,7 +10,7 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Sentin8/sentin8-post"
 rust-version = "1.85"
-description = "Sentin8 Sentin8:Post — multi-channel message delivery service."
+description = "Sentin8 Sentin8:Post - multi-channel message delivery service."
 
 [[bin]]
 name = "sentin8-post"

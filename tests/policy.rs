@@ -66,7 +66,7 @@ const MIRROR: &str =
 
 /// POLICY-POST-5 (a): with the seeded role-mirror set ENFORCED, a caller
 /// holding the live-resolved role passes step 5; a caller without it is
-/// denied (Shield IS the decision — no scope check ran at all).
+/// denied (Shield IS the decision - no scope check ran at all).
 #[test]
 fn enforced_scope_mirror_denies_caller_without_scope() {
     let env = Uuid::nil();
@@ -95,7 +95,7 @@ fn enforced_scope_mirror_denies_caller_without_scope() {
     );
 }
 
-/// POLICY-POST-5 (b): seeded set is SHADOW (the default mode from enroll) —
+/// POLICY-POST-5 (b): seeded set is SHADOW (the default mode from enroll) -
 /// a would-deny NEVER blocks; the request proceeds and the shadow signal is
 /// reported for Stat emission (safe-enablement contract §4.1).
 #[test]
@@ -122,7 +122,7 @@ fn shadow_seed_never_blocks_but_signals() {
     );
 }
 
-/// POLICY-POST-5 (b): forbid beats permit (Shield semantics) — a tenant-authored
+/// POLICY-POST-5 (b): forbid beats permit (Shield semantics) - a tenant-authored
 /// forbid on an M2M token type rejects even with the scope held.
 #[test]
 fn forbid_beats_permit() {
@@ -155,7 +155,7 @@ fn forbid_beats_permit() {
     assert!(out.is_allow());
 }
 
-/// POLICY-POST-5 (c): M2M parity — token type never bypasses or special-cases
+/// POLICY-POST-5 (c): M2M parity - token type never bypasses or special-cases
 /// policy; m2m callers are evaluated like any other principal.
 #[test]
 fn m2m_parity() {
@@ -188,7 +188,7 @@ fn m2m_parity() {
     );
 }
 
-/// POLICY-POST-5 (d): tenant-authored set lifecycle — upsert → reload →
+/// POLICY-POST-5 (d): tenant-authored set lifecycle - upsert → reload →
 /// enforce; then disable → removed from cache (the event→hot-reload path's
 /// in-memory half; the Bus plumbing is covered by the reloader task).
 #[test]
@@ -205,7 +205,7 @@ fn tenant_set_upsert_then_disable_lifecycle() {
             env,
         )])
         .expect("load");
-    // Env admin authors a tenant set (enforced) — e.g. a maintenance deny.
+    // Env admin authors a tenant set (enforced) - e.g. a maintenance deny.
     engine
         .upsert(row(
             "maintenance",
@@ -283,7 +283,7 @@ fn write_time_validation_rejects_bad_text() {
 }
 
 /// RBAC: a live-role gated rule (the seeded `role-mirror` form)
-/// allows the role holder and denies everyone else — including a caller
+/// allows the role holder and denies everyone else - including a caller
 /// who merely holds the SCOPE name (models are distinct sets).
 #[test]
 fn role_gate_allows_holder_denies_scope_only() {
@@ -317,7 +317,7 @@ fn role_gate_allows_holder_denies_scope_only() {
 }
 
 /// ReBAC: a relation tuple (u1 member of fx-ops) grants hierarchy
-/// membership — `principal in Group::"fx-ops"` — via the engine's
+/// membership - `principal in Group::"fx-ops"` - via the engine's
 /// parents-edge construction (§3.1c). Entity types are PascalCase-canonical.
 #[test]
 fn relation_tuple_grants_hierarchy_membership() {
@@ -358,7 +358,7 @@ fn relation_tuple_grants_hierarchy_membership() {
 }
 
 /// Attribute rule (ABAC beyond scopes): gateway test-send limited to business
-/// hours via a handler-supplied `hour` attribute — the class of rule scopes
+/// hours via a handler-supplied `hour` attribute - the class of rule scopes
 /// cannot express (design §2 rationale).
 #[test]
 fn attribute_time_window_rule() {
@@ -390,7 +390,7 @@ fn attribute_time_window_rule() {
 #[test]
 fn engine_alias_type_identity() {
     // §4.2b: build via the shared factory (the shim engine() is
-    // test-only-in-lib — production gets its engine from the shell boot).
+    // test-only-in-lib - production gets its engine from the shell boot).
     let engine: Arc<Engine> = sentin8::shield::runtime::engine_for("sentin8:post");
     assert_eq!(engine.service(), SERVICE);
     // The scope set from a post-like AuthContext has the expected membership.

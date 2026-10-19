@@ -31,7 +31,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON post.notification_preferences TO sentin8
 -- ── post.templates (POST-7) ───────────────────────────────────────────
 -- Branded message templates: per (env, key, locale) rendered with
 -- `{{var}}` substitution. Branding (`primary_color`, `logo_url`) rides
--- the render context resolved from `sys.branding` at delivery time —
+-- the render context resolved from `sys.branding` at delivery time -
 -- the template variables, not the gateway, carry the branding.
 CREATE TABLE IF NOT EXISTS post.templates (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

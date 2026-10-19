@@ -5,5 +5,5 @@
 
 //! Policy hot-reload consumer for Post (design ).
 //!
-//! Thin re-export of the shared runtime consumer (`sentin8::shield::runtime`) —
+//! Thin re-export of the shared runtime consumer (`sentin8::shield::runtime`) -
 //! every adopting service uses the same poll/ACK/reload loop.

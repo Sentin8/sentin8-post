@@ -6,13 +6,13 @@
 //! Annotated RFW POST-alias wrappers (Dash 28.14): one annotated handler =
 //! one path in the spec, so the second bindings of the gateway-delete and
 //! message-replay handlers need their own wrapper annotations (same handler
-//! body, alias path — OAPEC design §2 rule 3).
+//! body, alias path - OAPEC design §2 rule 3).
 
 use crate::handlers::AppState;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
 
-/// `POST /v1/gateways/{id}/delete` — RFW alias of `DELETE /v1/gateways/{id}`.
+/// `POST /v1/gateways/{id}/delete` - RFW alias of `DELETE /v1/gateways/{id}`.
 #[utoipa::path(
     post,
     path = "/v1/gateways/{id}/delete",
@@ -33,7 +33,7 @@ pub async fn gateway_delete(
     crate::handlers::delete_gateway(State(state), headers, Path(id)).await
 }
 
-/// `POST /v1/messages/{id}/replay` — RFW alias of `POST /v1/dlq/{id}/replay`.
+/// `POST /v1/messages/{id}/replay` - RFW alias of `POST /v1/dlq/{id}/replay`.
 #[utoipa::path(
     post,
     path = "/v1/messages/{id}/replay",

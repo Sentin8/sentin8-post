@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Post
 // SPDX-License-Identifier: Apache-2.0
 
-//! Post HTTP handlers — messages, gateways, DLQ.
+//! Post HTTP handlers - messages, gateways, DLQ.
 
 use std::sync::Arc;
 
@@ -28,11 +28,11 @@ pub struct AppState {
     pub config: Arc<PostConfig>,
     /// The pool.
     pub pool: sqlx::PgPool,
-    /// Shield engine ( pilot — design stage 0). Scope checks
+    /// Shield engine ( pilot - design stage 0). Scope checks
     /// remain primary; policy adds the attribute layer.
     /// The policy.
     pub policy: Arc<crate::policy::Engine>,
-    /// Boot-loaded workload registry (auth DESIGN §4.3f) — the cert-first
+    /// Boot-loaded workload registry (auth DESIGN §4.3f) - the cert-first
     /// handler gate's authorization record (sys's `sys-post` pusher,
     /// any enrolled M2M caller).
     pub workload_registry: sentin8::auth::workload_registry::WorkloadMap,
@@ -117,7 +117,7 @@ pub struct MessageSummary {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
-/// `GET /v1/messages` — list messages in the caller's org/env.
+/// `GET /v1/messages` - list messages in the caller's org/env.
 #[utoipa::path(
     post,
     operation_id = "message.send",
@@ -147,7 +147,7 @@ pub async fn send_message(
     let env_id = a.env_id();
 
     // DBX : `stream_family` (the producer service identity) is derived
-    // from the verified token — never caller-supplied. M2M `sub` is the DCR
+    // from the verified token - never caller-supplied. M2M `sub` is the DCR
     // client id; for user tokens fall back to the subject.
     let stream_family = a.claims.sub.clone();
 
@@ -346,7 +346,7 @@ pub async fn list_messages(
     Ok(Json(messages))
 }
 
-/// `GET /v1/messages/{id}` — message detail with all delivery attempts.
+/// `GET /v1/messages/{id}` - message detail with all delivery attempts.
 #[utoipa::path(
     get,
     operation_id = "message.get",
@@ -479,14 +479,14 @@ pub async fn get_message(
     Ok(Json(message))
 }
 
-/// `POST /v1/messages/{id}/read` — mark a message as read.
+/// `POST /v1/messages/{id}/read` - mark a message as read.
 ///
-/// Sets `read_at = now` on the message. Idempotent — a second call is a
+/// Sets `read_at = now` on the message. Idempotent - a second call is a
 /// no-op. Used by customer-facing apps (eBank) when the user opens a
 /// message, so the notification badge unread count decreases. The read
 /// receipt `sentin8:post:notification:read` is emitted as a local
 /// `post.outbox` row in the SAME transaction as the read update
-/// (post DESIGN §4) — exactly once with the domain change; the shell
+/// (post DESIGN §4) - exactly once with the domain change; the shell
 /// relay produces it to Bus (§6.7).
 #[utoipa::path(
     post,
@@ -525,7 +525,7 @@ pub async fn mark_message_read(
         .execute(&mut *conn)
         .await;
 
-    // Look up the recipient_user_id before marking read — the read
+    // Look up the recipient_user_id before marking read - the read
     // receipt's user_id comes from the row (email-only messages have no
     // user badge to update and emit nothing).
     let recipient_user_id: Option<Uuid> = sqlx::query_scalar(
@@ -551,9 +551,9 @@ pub async fn mark_message_read(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
     .flatten();
 
-    // Read receipt — `sentin8:post:notification:read` (post DESIGN §4):
+    // Read receipt - `sentin8:post:notification:read` (post DESIGN §4):
     // the unread count is computed AFTER the update on the SAME connection
-    // (tenant context is transaction-local — a bare-pool COUNT sees no rows
+    // (tenant context is transaction-local - a bare-pool COUNT sees no rows
     // under FORCE RLS). The outbox row commits atomically with the read
     // update and the shell relay produces it (§6.7). Best-effort: a failed
     // emission delays the badge update, never blocks the read.
@@ -576,7 +576,7 @@ pub async fn mark_message_read(
             "read_at": read_at.unwrap_or_else(chrono::Utc::now),
             "unread_count": unread_count,
         });
-        // ENV CONTRACT: the outbox row carries SYSTEM_ENV_ID — the shell's
+        // ENV CONTRACT: the outbox row carries SYSTEM_ENV_ID - the shell's
         // relay produces with post's M2M token, which is bound to the system
         // env; a caller-env row makes Bus reject the produce with 403
         // (cross-tenant) and the relay would hot-loop it forever. The target
@@ -609,8 +609,8 @@ pub async fn mark_message_read(
     Ok(Json(serde_json::json!({ "id": id, "read": true })))
 }
 
-/// `GET /v1/messages/{id}/content` — message content (subject + body only).
-/// `GET /v1/messages/{id}/content` — raw message content.
+/// `GET /v1/messages/{id}/content` - message content (subject + body only).
+/// `GET /v1/messages/{id}/content` - raw message content.
 #[utoipa::path(
     get,
     operation_id = "message.content",
@@ -671,8 +671,8 @@ pub async fn get_message_content(
 
 // ── DLQ ────────────────────────────────────────────────────────────────
 
-/// `GET /v1/dlq` — list dead-lettered deliveries.
-/// `GET /v1/dlq` — list dead-letter queue entries.
+/// `GET /v1/dlq` - list dead-lettered deliveries.
+/// `GET /v1/dlq` - list dead-letter queue entries.
 #[utoipa::path(
     get,
     operation_id = "dlq.list",
@@ -747,8 +747,8 @@ pub async fn list_dlq(
     Ok(Json(items))
 }
 
-/// `POST /v1/dlq/{id}/replay` — replay a dead-lettered delivery.
-/// `POST /v1/dlq/{id}/replay` — replay a DLQ entry.
+/// `POST /v1/dlq/{id}/replay` - replay a dead-lettered delivery.
+/// `POST /v1/dlq/{id}/replay` - replay a DLQ entry.
 #[utoipa::path(
     post,
     operation_id = "message.replay",
@@ -802,7 +802,7 @@ pub async fn replay_dlq(
         .await;
         tracing::info!(dlq_id = %id, inbox_id = %inbox_id, channel = %channel, "post: DLQ replay requested");
     } else {
-        // Unknown id — 404, not a silent OK (post DESIGN §4.6).
+        // Unknown id - 404, not a silent OK (post DESIGN §4.6).
         return Err((StatusCode::NOT_FOUND, format!("dlq entry {id} not found")));
     }
     Ok(StatusCode::OK)
@@ -825,7 +825,7 @@ pub struct CreateGatewayRequest {
     pub is_enabled: bool,
 }
 
-/// `GET /v1/gateways` — list gateway configs.
+/// `GET /v1/gateways` - list gateway configs.
 #[utoipa::path(
     get,
     operation_id = "gateway.list",
@@ -856,7 +856,7 @@ pub async fn list_gateways(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     // Stamp scopes so the gateways RLS scope-stamp branch
-    // (`sentin8_has_scope('sentin8:sys:admin')` — init.sql gateway tiers)
+    // (`sentin8_has_scope('sentin8:sys:admin')` - init.sql gateway tiers)
     // mirrors the Rust platform-tier write gate.
     let _ = sqlx::query("SELECT sentin8_set_tenant_context($1, NULL, NULL, $2)")
         .bind(a.env_id())
@@ -903,8 +903,8 @@ pub async fn list_gateways(
     Ok(Json(gateways))
 }
 
-/// `POST /v1/gateways` — create a gateway config.
-/// `POST /v1/gateways` — create a gateway config.
+/// `POST /v1/gateways` - create a gateway config.
+/// `POST /v1/gateways` - create a gateway config.
 #[utoipa::path(
     post,
     operation_id = "gateway.create",
@@ -934,7 +934,7 @@ pub async fn create_gateway(
     .await?;
     let scope = req.scope.as_str();
     // Sys/org-scope gateways are the platform plane (post design :
-    // `post:admin` | platform admins) — a caller without `sentin8:sys:admin`
+    // `post:admin` | platform admins) - a caller without `sentin8:sys:admin`
     // is rejected before any tenant mapping happens.
     if matches!(scope, "sys" | "org") && !a.is_platform_admin() {
         return Err((
@@ -964,7 +964,7 @@ pub async fn create_gateway(
         .begin()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    // Stamp scopes — the gateways RLS platform-tier branch requires the
+    // Stamp scopes - the gateways RLS platform-tier branch requires the
     // `sentin8:sys:admin` scope stamp on the writing context (the env
     // alone is the same for sys rows as any tenant's env row).
     let _ = sqlx::query("SELECT sentin8_set_tenant_context($1, NULL, NULL, $2)")
@@ -997,8 +997,8 @@ pub async fn create_gateway(
     ))
 }
 
-/// `DELETE /v1/gateways/{id}` — delete a gateway config.
-/// `DELETE /v1/gateways/{id}` — delete a gateway config.
+/// `DELETE /v1/gateways/{id}` - delete a gateway config.
+/// `DELETE /v1/gateways/{id}` - delete a gateway config.
 #[utoipa::path(
     delete,
     operation_id = "gateway.delete",
@@ -1026,7 +1026,7 @@ pub async fn delete_gateway(
         sentin8::shield::EvalTarget::new("sentin8:post:write"),
     )
     .await?;
-    // Row-aware delete (principles §4.3d): read the row's env/scope first —
+    // Row-aware delete (principles §4.3d): read the row's env/scope first -
     // the deleting transaction stamps the ROW's env as context (sys/org
     // rows live in the system env, env rows in their own env), matching
     // the gateways RLS tier policy; the explicit predicate remains
@@ -1081,8 +1081,8 @@ pub async fn delete_gateway(
     Ok(StatusCode::OK)
 }
 
-/// `POST /v1/gateways/test` — send a test message through a gateway.
-/// `POST /v1/gateways/test` — test a gateway config.
+/// `POST /v1/gateways/test` - send a test message through a gateway.
+/// `POST /v1/gateways/test` - test a gateway config.
 #[utoipa::path(
     post,
     operation_id = "gateway.test",
@@ -1114,7 +1114,7 @@ pub async fn test_gateway(
         scope = %req.scope,
         channel = %req.channel,
         provider = %req.provider,
-        "post: gateway test requested (stub — logs only in v1)"
+        "post: gateway test requested (stub - logs only in v1)"
     );
     Ok(Json(serde_json::json!({
         "status": "test_sent",

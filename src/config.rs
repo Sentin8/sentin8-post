@@ -12,7 +12,7 @@ use sentin8::auth::client::{Client as AuthClient, ClientOptions};
 #[derive(Debug, Clone)]
 /// Configuration for post.
 pub struct PostConfig {
-    /// Owned by the shell (SENTIN8_POST_PORT / database fallback chain) —
+    /// Owned by the shell (SENTIN8_POST_PORT / database fallback chain) -
     /// kept for parity with the other config fields.
     #[allow(dead_code)]
     /// The port.

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "sentin8-post",
-    "description": "Sentin8 Sentin8:Post — multi-channel message delivery service.",
+    "description": "Sentin8 Sentin8:Post - multi-channel message delivery service.",
     "license": {
       "name": "MIT OR Apache-2.0",
       "identifier": "MIT OR Apache-2.0"
@@ -69,7 +69,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`PUT /v1/admin/attributes` — upsert one principal attribute.\nValues must be JSON scalars or arrays of scalars (Shield restricted\nexpressions cannot represent nested objects — 422 otherwise).\nHandle PUT attribute.",
+        "summary": "`PUT /v1/admin/attributes` - upsert one principal attribute.\nValues must be JSON scalars or arrays of scalars (Shield restricted\nexpressions cannot represent nested objects - 422 otherwise).\nHandle PUT attribute.",
         "operationId": "put_attribute",
         "parameters": [
           {
@@ -169,7 +169,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/attributes/{id}/delete` — row-action alias.\n`id` is `subject_id:attr_key` as emitted by the RFW list; splitn(2)\nkeeps any colons inside the attribute key.\nHandle admin delete attribute path.",
+        "summary": "`POST /v1/admin/attributes/{id}/delete` - row-action alias.\n`id` is `subject_id:attr_key` as emitted by the RFW list; splitn(2)\nkeeps any colons inside the attribute key.\nHandle admin delete attribute path.",
         "operationId": "admin_delete_attribute_path",
         "parameters": [
           {
@@ -211,7 +211,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`GET /v1/admin/policy-decisions` — deny / would-deny feed for the UI\n. Reads the shared audit trail rows the runtime writes\n(`event->>'action' IN ('policy.deny','policy.would_deny')`).\nList policy decisions.",
+        "summary": "`GET /v1/admin/policy-decisions` - deny / would-deny feed for the UI\n. Reads the shared audit trail rows the runtime writes\n(`event->>'action' IN ('policy.deny','policy.would_deny')`).\nList policy decisions.",
         "operationId": "list_policy_decisions",
         "parameters": [
           {
@@ -252,7 +252,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`GET /v1/admin/policy-sets` — list this service's policy sets.\nList policy sets.",
+        "summary": "`GET /v1/admin/policy-sets` - list this service's policy sets.\nList policy sets.",
         "operationId": "list_policy_sets",
         "parameters": [
           {
@@ -339,7 +339,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/policy-sets/disable` — disable a set (no-match → deny for\nits actions; use `shadow` for pure observation-off).\nHandle admin disable policy set.",
+        "summary": "`POST /v1/admin/policy-sets/disable` - disable a set (no-match → deny for\nits actions; use `shadow` for pure observation-off).\nHandle admin disable policy set.",
         "operationId": "admin_disable_policy_set",
         "parameters": [
           {
@@ -382,7 +382,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/policy-sets/enforce` — promote a set to enforced.\nHandle admin enforce policy set.",
+        "summary": "`POST /v1/admin/policy-sets/enforce` - promote a set to enforced.\nHandle admin enforce policy set.",
         "operationId": "admin_enforce_policy_set",
         "parameters": [
           {
@@ -425,7 +425,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/policy-sets/shadow` — demote a set to shadow (rollback).\nHandle admin shadow policy set.",
+        "summary": "`POST /v1/admin/policy-sets/shadow` - demote a set to shadow (rollback).\nHandle admin shadow policy set.",
         "operationId": "admin_shadow_policy_set",
         "parameters": [
           {
@@ -468,7 +468,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`GET /v1/admin/policy-sets/{name}` — fetch one set.\nFetch policy set.",
+        "summary": "`GET /v1/admin/policy-sets/{name}` - fetch one set.\nFetch policy set.",
         "operationId": "get_policy_set",
         "parameters": [
           {
@@ -513,7 +513,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`PUT /v1/admin/policy-sets/{name}` — create/update with write-time\nvalidation. Platform rows are returned read-only (400); tenant\nrows (or new rows) are validated then stored, starting in `shadow`.\nHandle PUT policy set.",
+        "summary": "`PUT /v1/admin/policy-sets/{name}` - create/update with write-time\nvalidation. Platform rows are returned read-only (400); tenant\nrows (or new rows) are validated then stored, starting in `shadow`.\nHandle PUT policy set.",
         "operationId": "put_policy_set",
         "parameters": [
           {
@@ -568,7 +568,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`DELETE /v1/admin/policy-sets/{name}` — tenant sets only.\nDelete policy set.",
+        "summary": "`DELETE /v1/admin/policy-sets/{name}` - tenant sets only.\nDelete policy set.",
         "operationId": "delete_policy_set",
         "parameters": [
           {
@@ -610,7 +610,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/policy-sets/{name}/save` — PUT alias for the RFW renderer.\nHandle save policy set.",
+        "summary": "`POST /v1/admin/policy-sets/{name}/save` - PUT alias for the RFW renderer.\nHandle save policy set.",
         "operationId": "save_policy_set",
         "parameters": [
           {
@@ -667,7 +667,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/policy-sets/{name}/test` — dry-run candidate policy text\nagainst a sample context; returns decision + trace WITHOUT storing.\nHandle test policy set.",
+        "summary": "`POST /v1/admin/policy-sets/{name}/test` - dry-run candidate policy text\nagainst a sample context; returns decision + trace WITHOUT storing.\nHandle test policy set.",
         "operationId": "test_policy_set",
         "parameters": [
           {
@@ -724,7 +724,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/policy-sets/{name}/{action}` — path-param row-action\ndispatcher (enforce | shadow | disable | delete). One route shape serves\nall four actions (axum's matchit router cannot register `{name}/delete`\nnext to `{name}/{action}` without a conflict).\nHandle admin path action policy set.",
+        "summary": "`POST /v1/admin/policy-sets/{name}/{action}` - path-param row-action\ndispatcher (enforce | shadow | disable | delete). One route shape serves\nall four actions (axum's matchit router cannot register `{name}/delete`\nnext to `{name}/{action}` without a conflict).\nHandle admin path action policy set.",
         "operationId": "admin_path_action_policy_set",
         "parameters": [
           {
@@ -780,7 +780,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`GET /v1/admin/relations` — list this service's relation tuples.\nList relations.",
+        "summary": "`GET /v1/admin/relations` - list this service's relation tuples.\nList relations.",
         "operationId": "list_relations",
         "parameters": [
           {
@@ -819,7 +819,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`PUT /v1/admin/relations` — upsert one relation tuple. Tenant\ntuples carry `origin='tenant'`; the UNIQUE key dedupes re-writes.\nHandle PUT relation.",
+        "summary": "`PUT /v1/admin/relations` - upsert one relation tuple. Tenant\ntuples carry `origin='tenant'`; the UNIQUE key dedupes re-writes.\nHandle PUT relation.",
         "operationId": "put_relation",
         "parameters": [
           {
@@ -865,7 +865,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`DELETE /v1/admin/relations` — remove one relation tuple (tenant or\nplatform: env admins govern their env's graph; platform tuples are\nre-seeded by enroll on the next `vertical init`).\nDelete relation.",
+        "summary": "`DELETE /v1/admin/relations` - remove one relation tuple (tenant or\nplatform: env admins govern their env's graph; platform tuples are\nre-seeded by enroll on the next `vertical init`).\nDelete relation.",
         "operationId": "delete_relation",
         "parameters": [
           {
@@ -1032,7 +1032,7 @@
         "tags": [
           "policy"
         ],
-        "summary": "`POST /v1/admin/relations/{id}/delete` — row-action alias.\n`id` is the colon-joined tuple the RFW list emits\n(`subject_type:subject_id:relation:object_type:object_id`); parsed\nback-first (the last three segments are relation/object_type/object_id,\nthe first is subject_type, the middle rest is subject_id — tolerant of\ncolons inside subject ids).\nHandle admin delete relation path.",
+        "summary": "`POST /v1/admin/relations/{id}/delete` - row-action alias.\n`id` is the colon-joined tuple the RFW list emits\n(`subject_type:subject_id:relation:object_type:object_id`); parsed\nback-first (the last three segments are relation/object_type/object_id,\nthe first is subject_type, the middle rest is subject_id - tolerant of\ncolons inside subject ids).\nHandle admin delete relation path.",
         "operationId": "admin_delete_relation_path",
         "parameters": [
           {
@@ -1124,7 +1124,7 @@
         "tags": [
           "admin-ui"
         ],
-        "summary": "`GET /v1/admin/{resource}` — returns a JSON array of admin data rows.\nFetch admin data.",
+        "summary": "`GET /v1/admin/{resource}` - returns a JSON array of admin data rows.\nFetch admin data.",
         "operationId": "get_admin_data",
         "parameters": [
           {
@@ -1174,7 +1174,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`GET /v1/dlq` — list dead-lettered deliveries.\n`GET /v1/dlq` — list dead-letter queue entries.\nList dlq.",
+        "summary": "`GET /v1/dlq` - list dead-lettered deliveries.\n`GET /v1/dlq` - list dead-letter queue entries.\nList dlq.",
         "operationId": "dlq.list",
         "responses": {
           "200": {
@@ -1196,7 +1196,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`POST /v1/dlq/{id}/replay` — replay a dead-lettered delivery.\n`POST /v1/dlq/{id}/replay` — replay a DLQ entry.\nHandle replay dlq.",
+        "summary": "`POST /v1/dlq/{id}/replay` - replay a dead-lettered delivery.\n`POST /v1/dlq/{id}/replay` - replay a DLQ entry.\nHandle replay dlq.",
         "operationId": "message.replay",
         "parameters": [
           {
@@ -1233,7 +1233,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`GET /v1/gateways` — list gateway configs.\nList gateways.",
+        "summary": "`GET /v1/gateways` - list gateway configs.\nList gateways.",
         "operationId": "gateway.list",
         "responses": {
           "200": {
@@ -1253,7 +1253,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`POST /v1/gateways` — create a gateway config.\n`POST /v1/gateways` — create a gateway config.\nCreate gateway.",
+        "summary": "`POST /v1/gateways` - create a gateway config.\n`POST /v1/gateways` - create a gateway config.\nCreate gateway.",
         "operationId": "gateway.create",
         "requestBody": {
           "content": {
@@ -1285,7 +1285,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`POST /v1/gateways/test` — send a test message through a gateway.\n`POST /v1/gateways/test` — test a gateway config.\nHandle test gateway.",
+        "summary": "`POST /v1/gateways/test` - send a test message through a gateway.\n`POST /v1/gateways/test` - test a gateway config.\nHandle test gateway.",
         "operationId": "gateway.test",
         "requestBody": {
           "content": {
@@ -1317,7 +1317,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`DELETE /v1/gateways/{id}` — delete a gateway config.\n`DELETE /v1/gateways/{id}` — delete a gateway config.\nDelete gateway.",
+        "summary": "`DELETE /v1/gateways/{id}` - delete a gateway config.\n`DELETE /v1/gateways/{id}` - delete a gateway config.\nDelete gateway.",
         "operationId": "gateway.delete",
         "parameters": [
           {
@@ -1354,7 +1354,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`POST /v1/gateways/{id}/delete` — RFW alias of `DELETE /v1/gateways/{id}`.",
+        "summary": "`POST /v1/gateways/{id}/delete` - RFW alias of `DELETE /v1/gateways/{id}`.",
         "operationId": "gateway_delete",
         "parameters": [
           {
@@ -1486,7 +1486,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`GET /v1/messages/{id}` — message detail with all delivery attempts.\nFetch message.",
+        "summary": "`GET /v1/messages/{id}` - message detail with all delivery attempts.\nFetch message.",
         "operationId": "message.get",
         "parameters": [
           {
@@ -1523,7 +1523,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`GET /v1/messages/{id}/content` — message content (subject + body only).\n`GET /v1/messages/{id}/content` — raw message content.\nFetch message content.",
+        "summary": "`GET /v1/messages/{id}/content` - message content (subject + body only).\n`GET /v1/messages/{id}/content` - raw message content.\nFetch message content.",
         "operationId": "message.content",
         "parameters": [
           {
@@ -1560,8 +1560,8 @@
         "tags": [
           "post"
         ],
-        "summary": "`POST /v1/messages/{id}/read` — mark a message as read.",
-        "description": "Sets `read_at = now` on the message. Idempotent — a second call is a\nno-op. Used by customer-facing apps (eBank) when the user opens a\nmessage, so the notification badge unread count decreases. The read\nreceipt `sentin8:post:notification:read` is emitted as a local\n`post.outbox` row in the SAME transaction as the read update\n(post DESIGN §4) — exactly once with the domain change; the shell\nrelay produces it to Bus (§6.7).\nHandle mark message read.",
+        "summary": "`POST /v1/messages/{id}/read` - mark a message as read.",
+        "description": "Sets `read_at = now` on the message. Idempotent - a second call is a\nno-op. Used by customer-facing apps (eBank) when the user opens a\nmessage, so the notification badge unread count decreases. The read\nreceipt `sentin8:post:notification:read` is emitted as a local\n`post.outbox` row in the SAME transaction as the read update\n(post DESIGN §4) - exactly once with the domain change; the shell\nrelay produces it to Bus (§6.7).\nHandle mark message read.",
         "operationId": "message.mark-read",
         "parameters": [
           {
@@ -1598,7 +1598,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`POST /v1/messages/{id}/replay` — RFW alias of `POST /v1/dlq/{id}/replay`.",
+        "summary": "`POST /v1/messages/{id}/replay` - RFW alias of `POST /v1/dlq/{id}/replay`.",
         "operationId": "message_replay",
         "parameters": [
           {
@@ -1635,7 +1635,7 @@
         "tags": [
           "post"
         ],
-        "summary": "`GET /v1/messages` — list messages in the caller's org/env.\nSend message.",
+        "summary": "`GET /v1/messages` - list messages in the caller's org/env.\nSend message.",
         "operationId": "message.send",
         "requestBody": {
           "content": {
@@ -1706,7 +1706,7 @@
       },
       "CreatePolicySetBody": {
         "type": "object",
-        "description": "`POST /v1/admin/policy-sets` — create a tenant policy set (name in body).\nReuses the local PUT core (validation + tenant origin + event + audit),\nthen redirects the RFW renderer to the editor page.\nThe createpolicysetbody type.",
+        "description": "`POST /v1/admin/policy-sets` - create a tenant policy set (name in body).\nReuses the local PUT core (validation + tenant origin + event + audit),\nthen redirects the RFW renderer to the editor page.\nThe createpolicysetbody type.",
         "required": [
           "policy_set_name",
           "policies"
@@ -1890,7 +1890,7 @@
       },
       "PutAttributeBody": {
         "type": "object",
-        "description": "`PUT /v1/admin/attributes` body — one principal attribute.\nThe putattributebody type.",
+        "description": "`PUT /v1/admin/attributes` body - one principal attribute.\nThe putattributebody type.",
         "required": [
           "subject_id",
           "attr_key",
@@ -1950,7 +1950,7 @@
       },
       "PutRelationBody": {
         "type": "object",
-        "description": "`PUT /v1/admin/relations` body — one relation tuple.\nThe putrelationbody type.",
+        "description": "`PUT /v1/admin/relations` body - one relation tuple.\nThe putrelationbody type.",
         "required": [
           "subject_type",
           "subject_id",
@@ -2117,7 +2117,7 @@
   "tags": [
     {
       "name": "post",
-      "description": "Sentin8:Post admin API — messages, gateways, DLQ"
+      "description": "Sentin8:Post admin API - messages, gateways, DLQ"
     }
   ]
 }

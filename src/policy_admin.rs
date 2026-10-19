@@ -7,7 +7,7 @@
 //!
 //! Every adopting service serves the same uniform surface; these are post's.
 //! Write-time validation: Shield parse + schema-linked validation rejects
-//! invalid policies with 422 — nothing is stored. Tenant-authored
+//! invalid policies with 422 - nothing is stored. Tenant-authored
 //! rows carry `origin='tenant'` and start in `shadow`; the scope-mirror seed
 //! from `vertical-registry.json` carries `origin='platform'` and is managed by
 //! enroll (this API returns it read-only).
@@ -79,9 +79,9 @@ pub struct TestPolicySetBody {
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-/// Resolve `target_env_id` (REQUIRED — Fix A). Admin policy
+/// Resolve `target_env_id` (REQUIRED - Fix A). Admin policy
 /// endpoints accept an env the caller administers; a missing param is 400
-/// (no fallback to the caller's env — the breach vector).
+/// (no fallback to the caller's env - the breach vector).
 fn resolve_env(q: &TargetEnvQuery, _a: &auth::AuthContext) -> Result<Uuid, (StatusCode, String)> {
     q.target_env_id
         .as_deref()
@@ -89,7 +89,7 @@ fn resolve_env(q: &TargetEnvQuery, _a: &auth::AuthContext) -> Result<Uuid, (Stat
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                "missing target_env_id — auth is env-scoped".into(),
+                "missing target_env_id - auth is env-scoped".into(),
             )
         })
 }
@@ -143,7 +143,7 @@ async fn emit_policy_event(
 
 // ── Endpoints ───────────────────────────────────────────────────────────
 
-/// `GET /v1/admin/policy-sets` — list this service's policy sets.
+/// `GET /v1/admin/policy-sets` - list this service's policy sets.
 /// List policy sets.
 #[utoipa::path(
     get,
@@ -191,7 +191,7 @@ pub async fn list_policy_sets(
         .iter()
         .map(|r| {
             serde_json::json!({
- // id = the set name — the RFW row actions substitute {id}
+ // id = the set name - the RFW row actions substitute {id}
  // from this field ; without it every Delete/Enforce
  // click POSTed `policy-sets//delete` (empty id → 404).
                 "id": r.get::<String, _>("policy_set_name"),
@@ -209,7 +209,7 @@ pub async fn list_policy_sets(
     Ok(Json(sets))
 }
 
-/// `GET /v1/admin/policy-sets/{name}` — fetch one set.
+/// `GET /v1/admin/policy-sets/{name}` - fetch one set.
 /// Fetch policy set.
 #[utoipa::path(
     get,
@@ -277,7 +277,7 @@ pub async fn get_policy_set(
     })))
 }
 
-/// `PUT /v1/admin/policy-sets/{name}` — create/update with write-time
+/// `PUT /v1/admin/policy-sets/{name}` - create/update with write-time
 /// validation. Platform rows are returned read-only (400); tenant
 /// rows (or new rows) are validated then stored, starting in `shadow`.
 /// Handle PUT policy set.
@@ -314,9 +314,9 @@ pub async fn put_policy_set(
     .await?;
     let env_id = resolve_env(&q, &a)?;
 
-    // Size caps before any parse work — a multi-MB submit must
+    // Size caps before any parse work - a multi-MB submit must
     // fail fast with 413, not with a truncated Shield parse error.
-    // The RFW renderer submits "" for untouched optional textareas — treat
+    // The RFW renderer submits "" for untouched optional textareas - treat
     // it as absent (policy spec).
     let schema = normalize_schema(body.schema.as_deref());
     check_text_caps(&body.policies, schema)?;
@@ -341,7 +341,7 @@ pub async fn put_policy_set(
             "mode must be 'shadow' or 'enforced'".into(),
         ));
     }
-    // Platform rows are enroll-managed — refuse to overwrite.
+    // Platform rows are enroll-managed - refuse to overwrite.
     let existing: Option<(String,)> =
         sqlx::query_as("SELECT origin FROM sys.policy_sets WHERE service = 'sentin8:post' AND env_id = $1 AND policy_set_name = $2")
             .bind(env_id)
@@ -353,7 +353,7 @@ pub async fn put_policy_set(
         if origin == "platform" {
             return Err((
                 StatusCode::CONFLICT,
-                "policy set is platform-managed (vertical-registry.json) — edit via enroll".into(),
+                "policy set is platform-managed (vertical-registry.json) - edit via enroll".into(),
             ));
         }
     }
@@ -383,7 +383,7 @@ pub async fn put_policy_set(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (version, out_mode) = row;
     // Inbox-first event (same DB state; separate insert on the same conn is
-    // the post pattern — the admin handler's mutations are not transactional
+    // the post pattern - the admin handler's mutations are not transactional
     // bundles today).
     if let Err(e) = emit_policy_event(
         &state.pool,
@@ -398,7 +398,7 @@ pub async fn put_policy_set(
     {
         tracing::warn!(error = %e, "policy event emit failed (hot-reload delay only)");
     }
-    // Audit (standard pipeline step 10) — direct audit_events INSERT.
+    // Audit (standard pipeline step 10) - direct audit_events INSERT.
     let _ = sqlx::query(
         r#"INSERT INTO audit_journal (id, env_id, action, details) VALUES ($1, $2, $3, $4)"#,
     )
@@ -422,7 +422,7 @@ pub async fn put_policy_set(
     ))
 }
 
-/// `DELETE /v1/admin/policy-sets/{name}` — tenant sets only.
+/// `DELETE /v1/admin/policy-sets/{name}` - tenant sets only.
 /// Delete policy set.
 #[utoipa::path(
     delete,
@@ -507,7 +507,7 @@ pub async fn delete_policy_set(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// `POST /v1/admin/policy-sets/{name}/test` — dry-run candidate policy text
+/// `POST /v1/admin/policy-sets/{name}/test` - dry-run candidate policy text
 /// against a sample context; returns decision + trace WITHOUT storing.
 /// Handle test policy set.
 #[utoipa::path(
@@ -589,9 +589,9 @@ pub async fn test_policy_set(
     })))
 }
 
-// ── Relations admin API (/ — ReBAC) ───────────────────────────
+// ── Relations admin API (/ - ReBAC) ───────────────────────────
 
-/// `PUT /v1/admin/relations` body — one relation tuple.
+/// `PUT /v1/admin/relations` body - one relation tuple.
 #[derive(Deserialize, utoipa::ToSchema)]
 /// The putrelationbody type.
 pub struct PutRelationBody {
@@ -666,7 +666,7 @@ fn emit_relations_event(
     });
 }
 
-/// `GET /v1/admin/relations` — list this service's relation tuples.
+/// `GET /v1/admin/relations` - list this service's relation tuples.
 /// List relations.
 #[utoipa::path(
     get,
@@ -713,7 +713,7 @@ pub async fn list_relations(
     Ok(Json(items))
 }
 
-/// `PUT /v1/admin/relations` — upsert one relation tuple. Tenant
+/// `PUT /v1/admin/relations` - upsert one relation tuple. Tenant
 /// tuples carry `origin='tenant'`; the UNIQUE key dedupes re-writes.
 /// Handle PUT relation.
 #[utoipa::path(
@@ -786,7 +786,7 @@ pub async fn put_relation(
     ))
 }
 
-/// `DELETE /v1/admin/relations` query/body — identifies the tuple.
+/// `DELETE /v1/admin/relations` query/body - identifies the tuple.
 #[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The deleterelationquery type.
 pub struct DeleteRelationQuery {
@@ -805,7 +805,7 @@ pub struct DeleteRelationQuery {
     pub target_env_id: Option<String>,
 }
 
-/// `DELETE /v1/admin/relations` — remove one relation tuple (tenant or
+/// `DELETE /v1/admin/relations` - remove one relation tuple (tenant or
 /// platform: env admins govern their env's graph; platform tuples are
 /// re-seeded by enroll on the next `vertical init`).
 /// Delete relation.
@@ -877,7 +877,7 @@ pub async fn delete_relation(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// `GET /v1/admin/relations/check` — Zanzibar-style dry-run :
+/// `GET /v1/admin/relations/check` - Zanzibar-style dry-run :
 /// is `subject` connected to `object` by `relation` (directly or through the
 /// hierarchy)? Returns the tuple path + decision without side effects.
 #[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
@@ -920,7 +920,7 @@ pub async fn check_relation(
     };
     let (_a, env_id, mut _conn) =
         admin_gate(&state, &headers, &tq, "sentin8:post:policy:read").await?;
-    // RLS: the slice read rides the admin_gate transaction (post DESIGN §5) —
+    // RLS: the slice read rides the admin_gate transaction (post DESIGN §5) -
     // `sys.policy_relations` is FORCE-RLS'd, so a bare-pool read is invisible.
     let slice: Vec<sentin8::shield::RelationRecord> = sqlx::query_as(
         r#"SELECT id, env_id, service, subject_type, subject_id, relation,
@@ -977,9 +977,9 @@ pub async fn check_relation(
     })))
 }
 
-// ── Attributes admin API (/ — ABAC) ──────────────────────────
+// ── Attributes admin API (/ - ABAC) ──────────────────────────
 
-/// `PUT /v1/admin/attributes` body — one principal attribute.
+/// `PUT /v1/admin/attributes` body - one principal attribute.
 #[derive(Deserialize, utoipa::ToSchema)]
 /// The putattributebody type.
 pub struct PutAttributeBody {
@@ -991,7 +991,7 @@ pub struct PutAttributeBody {
     pub attr_value: serde_json::Value,
 }
 
-/// `GET /v1/admin/attributes` — list principal attributes for one subject
+/// `GET /v1/admin/attributes` - list principal attributes for one subject
 /// (or all subjects when `subject_id` is omitted) in the target env.
 #[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The listattributesquery type.
@@ -1085,9 +1085,9 @@ fn emit_attrs_event(pool: &sqlx::PgPool, env_id: Uuid, subject_id: &str, attr_ke
     });
 }
 
-/// `PUT /v1/admin/attributes` — upsert one principal attribute.
+/// `PUT /v1/admin/attributes` - upsert one principal attribute.
 /// Values must be JSON scalars or arrays of scalars (Shield restricted
-/// expressions cannot represent nested objects — 422 otherwise).
+/// expressions cannot represent nested objects - 422 otherwise).
 /// Handle PUT attribute.
 #[utoipa::path(
     put,
@@ -1154,7 +1154,7 @@ pub async fn put_attribute(
     ))
 }
 
-/// `DELETE /v1/admin/attributes` — remove one principal attribute.
+/// `DELETE /v1/admin/attributes` - remove one principal attribute.
 #[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The deleteattributequery type.
 pub struct DeleteAttributeQuery {
@@ -1222,7 +1222,7 @@ pub async fn delete_attribute(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(StatusCode::NO_CONTENT)
 }
-// ── RFW POST-alias row actions ( — Dash 28.14; renderer is POST-only,
+// ── RFW POST-alias row actions ( - Dash 28.14; renderer is POST-only,
 // ) ─────────────────────────────────────────
 
 /// Shared body for the mode-flip aliases: `{"policy_set_name": "…", "enabled": bool}`.
@@ -1268,7 +1268,7 @@ async fn flip_policy_mode(
         }
     };
     // Tenant rows flip freely; platform rows are enroll-managed for MODE only
-    // (shadow→enforced promotion is the ops lever — allowed; origin stays).
+    // (shadow→enforced promotion is the ops lever - allowed; origin stays).
     let row: (i32, String, bool) = sqlx::query_as(
         r#"UPDATE sys.policy_sets
               SET mode = $3, enabled = COALESCE($4, enabled), version = version + 1, updated_at = now()
@@ -1324,7 +1324,7 @@ async fn flip_policy_mode(
     })))
 }
 
-/// `POST /v1/admin/policy-sets/enforce` — promote a set to enforced.
+/// `POST /v1/admin/policy-sets/enforce` - promote a set to enforced.
 /// Handle admin enforce policy set.
 #[utoipa::path(
     post,
@@ -1355,7 +1355,7 @@ pub async fn admin_enforce_policy_set(
     .await
 }
 
-/// `POST /v1/admin/policy-sets/shadow` — demote a set to shadow (rollback).
+/// `POST /v1/admin/policy-sets/shadow` - demote a set to shadow (rollback).
 /// Handle admin shadow policy set.
 #[utoipa::path(
     post,
@@ -1378,7 +1378,7 @@ pub async fn admin_shadow_policy_set(
     flip_policy_mode(State(state), headers, Query(q), Some("shadow"), None, body).await
 }
 
-/// `POST /v1/admin/policy-sets/disable` — disable a set (no-match → deny for
+/// `POST /v1/admin/policy-sets/disable` - disable a set (no-match → deny for
 /// its actions; use `shadow` for pure observation-off).
 /// Handle admin disable policy set.
 #[utoipa::path(
@@ -1407,7 +1407,7 @@ pub async fn admin_disable_policy_set(
 // actions with an empty body, so the UI mutations get POST aliases whose
 // target is identified by the PATH. CLI callers keep the canonical verbs.
 
-/// Policy text / schema size caps — mirrors the shared admin
+/// Policy text / schema size caps - mirrors the shared admin
 /// module (`sentin8::shield::admin::MAX_POLICY_TEXT_BYTES`); post's local
 /// copy applies the same guardrail.
 const MAX_POLICY_TEXT_BYTES: usize = 64 * 1024;
@@ -1415,7 +1415,7 @@ const MAX_SCHEMA_TEXT_BYTES: usize = 64 * 1024;
 
 /// Normalize the optional Shield schema from a request body: an empty or
 /// whitespace-only string means "no schema" (the RFW form renderer submits
-/// `""` for untouched optional textareas — ).
+/// `""` for untouched optional textareas - ).
 fn normalize_schema(schema: Option<&str>) -> Option<&str> {
     schema.filter(|s| !s.trim().is_empty())
 }
@@ -1446,7 +1446,7 @@ fn check_text_caps(policies: &str, schema: Option<&str>) -> Result<(), (StatusCo
     Ok(())
 }
 
-/// `POST /v1/admin/policy-sets` — create a tenant policy set (name in body).
+/// `POST /v1/admin/policy-sets` - create a tenant policy set (name in body).
 /// Reuses the local PUT core (validation + tenant origin + event + audit),
 /// then redirects the RFW renderer to the editor page.
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -1528,7 +1528,7 @@ pub async fn create_policy_set(
     .into_response())
 }
 
-/// `POST /v1/admin/policy-sets/{name}/save` — PUT alias for the RFW renderer.
+/// `POST /v1/admin/policy-sets/{name}/save` - PUT alias for the RFW renderer.
 /// Handle save policy set.
 #[utoipa::path(
     post,
@@ -1556,7 +1556,7 @@ pub async fn save_policy_set(
     put_policy_set(State(state), headers, Path(name), Query(q), body).await
 }
 
-/// `POST /v1/admin/policy-sets/{name}/{action}` — path-param row-action
+/// `POST /v1/admin/policy-sets/{name}/{action}` - path-param row-action
 /// dispatcher (enforce | shadow | disable | delete). One route shape serves
 /// all four actions (axum's matchit router cannot register `{name}/delete`
 /// next to `{name}/{action}` without a conflict).
@@ -1612,11 +1612,11 @@ pub async fn admin_path_action_policy_set(
     .map(|Json(v)| Json(v).into_response())
 }
 
-/// `POST /v1/admin/relations/{id}/delete` — row-action alias.
+/// `POST /v1/admin/relations/{id}/delete` - row-action alias.
 /// `id` is the colon-joined tuple the RFW list emits
 /// (`subject_type:subject_id:relation:object_type:object_id`); parsed
 /// back-first (the last three segments are relation/object_type/object_id,
-/// the first is subject_type, the middle rest is subject_id — tolerant of
+/// the first is subject_type, the middle rest is subject_id - tolerant of
 /// colons inside subject ids).
 /// Handle admin delete relation path.
 #[utoipa::path(
@@ -1664,7 +1664,7 @@ pub async fn admin_delete_relation_path(
     delete_relation(State(state), headers, Query(dq)).await
 }
 
-/// `POST /v1/admin/attributes/{id}/delete` — row-action alias.
+/// `POST /v1/admin/attributes/{id}/delete` - row-action alias.
 /// `id` is `subject_id:attr_key` as emitted by the RFW list; splitn(2)
 /// keeps any colons inside the attribute key.
 /// Handle admin delete attribute path.
@@ -1702,7 +1702,7 @@ pub async fn admin_delete_attribute_path(
     delete_attribute(State(state), headers, Query(dq)).await
 }
 
-/// `GET /v1/admin/policy-decisions` — deny / would-deny feed for the UI
+/// `GET /v1/admin/policy-decisions` - deny / would-deny feed for the UI
 /// . Reads the shared audit trail rows the runtime writes
 /// (`event->>'action' IN ('policy.deny','policy.would_deny')`).
 /// List policy decisions.
