@@ -27,6 +27,11 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use sentin8::bus::outbox::PolicyUpdatedEnvelope;
+use sentin8::shield::admin::{
+    AttributeUpserted, PolicyDecisionRow, PolicyModeMutated, PolicySetDetail, PolicySetMutated,
+    PolicySetRow, PolicyTestOutcome, PrincipalAttr, RelationCheckResult, RelationRecordRow,
+    RelationUpserted,
+};
 
 use crate::admin_ui::TargetEnvQuery;
 use crate::auth;
@@ -150,7 +155,7 @@ async fn emit_policy_event(
     path = "/v1/admin/policy-sets",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     responses(
-        (status = 200, description = "OK", body = Vec<serde_json::Value>),
+        (status = 200, description = "Policy sets of this service", body = Vec<sentin8::shield::admin::PolicySetRow>),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -160,7 +165,7 @@ pub async fn list_policy_sets(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
-) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+) -> Result<Json<Vec<sentin8::shield::admin::PolicySetRow>>, (StatusCode, String)> {
     let a = auth::require_any_scope(&state.config, &headers, &["sentin8:post:policy:read"]).await?;
     crate::policy::require_policy(
         &state.policy,
@@ -187,23 +192,23 @@ pub async fn list_policy_sets(
     .fetch_all(&mut *conn)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let sets: Vec<serde_json::Value> = rows
+    let sets: Vec<PolicySetRow> = rows
         .iter()
         .map(|r| {
-            serde_json::json!({
+            PolicySetRow {
  // id = the set name - the RFW row actions substitute {id}
  // from this field ; without it every Delete/Enforce
  // click POSTed `policy-sets//delete` (empty id → 404).
-                "id": r.get::<String, _>("policy_set_name"),
-                "policy_set_name": r.get::<String, _>("policy_set_name"),
-                "description": r.get::<String, _>("description"),
-                "origin": r.get::<String, _>("origin"),
-                "mode": r.get::<String, _>("mode"),
-                "version": r.get::<i32, _>("version"),
-                "enabled": r.get::<bool, _>("enabled"),
-                "policies_len": r.get::<i64, _>("policies_len"),
-                "updated_at": r.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
-            })
+                id: r.get::<String, _>("policy_set_name"),
+                policy_set_name: r.get::<String, _>("policy_set_name"),
+                description: r.get::<String, _>("description"),
+                origin: r.get::<String, _>("origin"),
+                mode: r.get::<String, _>("mode"),
+                version: r.get::<i32, _>("version"),
+                enabled: r.get::<bool, _>("enabled"),
+                policies_len: r.get::<i64, _>("policies_len"),
+                updated_at: r.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
+            }
         })
         .collect();
     Ok(Json(sets))
@@ -219,7 +224,7 @@ pub async fn list_policy_sets(
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::PolicySetDetail),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -230,7 +235,7 @@ pub async fn get_policy_set(
     headers: HeaderMap,
     Path(name): Path<String>,
     Query(q): Query<TargetEnvQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<sentin8::shield::admin::PolicySetDetail>, (StatusCode, String)> {
     let a = auth::require_any_scope(&state.config, &headers, &["sentin8:post:policy:read"]).await?;
     crate::policy::require_policy(
         &state.policy,
@@ -263,18 +268,18 @@ pub async fn get_policy_set(
             format!("policy set '{name}' not found"),
         )
     })?;
-    Ok(Json(serde_json::json!({
-        "policy_set_name": row.get::<String, _>("policy_set_name"),
-        "description": row.get::<String, _>("description"),
-        "policies": row.get::<String, _>("policies"),
-        "schema": row.get::<Option<String>, _>("schema"),
-        "origin": row.get::<String, _>("origin"),
-        "mode": row.get::<String, _>("mode"),
-        "version": row.get::<i32, _>("version"),
-        "enabled": row.get::<bool, _>("enabled"),
-        "created_at": row.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-        "updated_at": row.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
-    })))
+    Ok(Json(PolicySetDetail {
+        policy_set_name: row.get::<String, _>("policy_set_name"),
+        description: row.get::<String, _>("description"),
+        policies: row.get::<String, _>("policies"),
+        schema: row.get::<Option<String>, _>("schema"),
+        origin: row.get::<String, _>("origin"),
+        mode: row.get::<String, _>("mode"),
+        version: row.get::<i32, _>("version"),
+        enabled: row.get::<bool, _>("enabled"),
+        created_at: row.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
+        updated_at: row.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
+    }))
 }
 
 /// `PUT /v1/admin/policy-sets/{name}` - create/update with write-time
@@ -290,7 +295,7 @@ pub async fn get_policy_set(
     ),
     request_body = PutPolicySetBody,
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::PolicySetMutated),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -302,7 +307,7 @@ pub async fn put_policy_set(
     Path(name): Path<String>,
     Query(q): Query<TargetEnvQuery>,
     axum::Json(body): axum::Json<PutPolicySetBody>,
-) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
+) -> Result<(StatusCode, Json<sentin8::shield::admin::PolicySetMutated>), (StatusCode, String)> {
     let a =
         auth::require_any_scope(&state.config, &headers, &["sentin8:post:policy:write"]).await?;
     crate::policy::require_policy(
@@ -418,7 +423,7 @@ pub async fn put_policy_set(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok((
         StatusCode::CREATED,
-        Json(serde_json::json!({"policy_set_name": name, "version": version, "mode": out_mode})),
+        Json(PolicySetMutated { policy_set_name: name, version, mode: out_mode }),
     ))
 }
 
@@ -519,7 +524,7 @@ pub async fn delete_policy_set(
     ),
     request_body = TestPolicySetBody,
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::PolicyTestOutcome),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -531,7 +536,7 @@ pub async fn test_policy_set(
     Path(name): Path<String>,
     Query(q): Query<TargetEnvQuery>,
     axum::Json(body): axum::Json<TestPolicySetBody>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<sentin8::shield::admin::PolicyTestOutcome>, (StatusCode, String)> {
     let a =
         auth::require_any_scope(&state.config, &headers, &["sentin8:post:policy:write"]).await?;
     crate::policy::require_policy(
@@ -581,12 +586,13 @@ pub async fn test_policy_set(
     );
     let action = body.action.unwrap_or_else(|| "sentin8:post:read".into());
     let outcome = engine.evaluate(&ctx, &sentin8::shield::EvalTarget::new(action.clone()));
-    Ok(Json(serde_json::json!({
-        "policy_set_name": name,
-        "action": action,
-        "decision": outcome.enforce_decision,
-        "would_deny": outcome.shadow_deny.is_some() || !outcome.enforce_decision.is_allow(),
-    })))
+    let would_deny = outcome.shadow_deny.is_some() || !outcome.enforce_decision.is_allow();
+    Ok(Json(PolicyTestOutcome {
+        policy_set_name: name,
+        action,
+        decision: outcome.enforce_decision,
+        would_deny,
+    }))
 }
 
 // ── Relations admin API (/ - ReBAC) ───────────────────────────
@@ -673,7 +679,7 @@ fn emit_relations_event(
     path = "/v1/admin/relations",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     responses(
-        (status = 200, description = "OK", body = Vec<serde_json::Value>),
+        (status = 200, description = "ReBAC relations of this service", body = Vec<sentin8::shield::admin::RelationRecordRow>),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -683,7 +689,7 @@ pub async fn list_relations(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
-) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+) -> Result<Json<Vec<sentin8::shield::admin::RelationRecordRow>>, (StatusCode, String)> {
     let (_a, env_id, mut conn) =
         admin_gate(&state, &headers, &q, "sentin8:post:policy:read").await?;
     let rows = sqlx::query(
@@ -697,17 +703,17 @@ pub async fn list_relations(
     .fetch_all(&mut *conn)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let items: Vec<serde_json::Value> = rows
+    let items: Vec<RelationRecordRow> = rows
         .iter()
         .map(|r| {
-            serde_json::json!({
-                "subject_type": r.get::<String, _>("subject_type"),
-                "subject_id": r.get::<String, _>("subject_id"),
-                "relation": r.get::<String, _>("relation"),
-                "object_type": r.get::<String, _>("object_type"),
-                "object_id": r.get::<String, _>("object_id"),
-                "origin": r.get::<String, _>("origin"),
-            })
+            RelationRecordRow {
+                subject_type: r.get::<String, _>("subject_type"),
+                subject_id: r.get::<String, _>("subject_id"),
+                relation: r.get::<String, _>("relation"),
+                object_type: r.get::<String, _>("object_type"),
+                object_id: r.get::<String, _>("object_id"),
+                origin: r.get::<String, _>("origin"),
+            }
         })
         .collect();
     Ok(Json(items))
@@ -722,7 +728,7 @@ pub async fn list_relations(
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     request_body = PutRelationBody,
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::RelationUpserted),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -733,7 +739,7 @@ pub async fn put_relation(
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
     axum::Json(body): axum::Json<PutRelationBody>,
-) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
+) -> Result<(StatusCode, Json<sentin8::shield::admin::RelationUpserted>), (StatusCode, String)> {
     let (a, env_id, mut conn) =
         admin_gate(&state, &headers, &q, "sentin8:post:policy:write").await?;
     let row: (Uuid,) = sqlx::query_as(
@@ -782,7 +788,7 @@ pub async fn put_relation(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok((
         StatusCode::CREATED,
-        Json(serde_json::json!({"id": row.0, "status": "upserted"})),
+        Json(RelationUpserted { id: row.0, status: "upserted".to_string() }),
     ))
 }
 
@@ -904,7 +910,7 @@ pub struct RelationCheckQuery {
     path = "/v1/admin/relations/check",
     params(RelationCheckQuery),
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::RelationCheckResult),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -914,7 +920,7 @@ pub async fn check_relation(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<RelationCheckQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<sentin8::shield::admin::RelationCheckResult>, (StatusCode, String)> {
     let tq = TargetEnvQuery {
         target_env_id: q.target_env_id.clone(),
     };
@@ -966,15 +972,15 @@ pub async fn check_relation(
             break;
         }
     }
-    Ok(Json(serde_json::json!({
-        "subject": format!("{}/{}", q.subject_type, q.subject_id),
-        "relation": q.relation,
-        "object": format!("{}/{}", q.object_type, q.object_id),
-        "direct": direct,
-        "transitive": transitive,
-        "connected": direct || transitive,
-        "tuple_count": slice.len(),
-    })))
+    Ok(Json(RelationCheckResult {
+        subject: format!("{}/{}", q.subject_type, q.subject_id),
+        relation: q.relation,
+        object: format!("{}/{}", q.object_type, q.object_id),
+        direct,
+        transitive,
+        connected: direct || transitive,
+        tuple_count: slice.len(),
+    }))
 }
 
 // ── Attributes admin API (/ - ABAC) ──────────────────────────
@@ -1010,7 +1016,7 @@ pub struct ListAttributesQuery {
     path = "/v1/admin/attributes",
     params(ListAttributesQuery),
     responses(
-        (status = 200, description = "OK", body = Vec<serde_json::Value>),
+        (status = 200, description = "Principal attributes of this service", body = Vec<sentin8::shield::admin::PrincipalAttr>),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -1020,7 +1026,7 @@ pub async fn list_attributes(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<ListAttributesQuery>,
-) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+) -> Result<Json<Vec<sentin8::shield::admin::PrincipalAttr>>, (StatusCode, String)> {
     let tq = TargetEnvQuery {
         target_env_id: q.target_env_id.clone(),
     };
@@ -1051,15 +1057,15 @@ pub async fn list_attributes(
         .await
     }
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let items: Vec<serde_json::Value> = rows
+    let items: Vec<PrincipalAttr> = rows
         .iter()
         .map(|r| {
-            serde_json::json!({
-                "subject_id": r.get::<String, _>("subject_id"),
-                "attr_key": r.get::<String, _>("attr_key"),
-                "attr_value": r.get::<serde_json::Value, _>("attr_value"),
-                "origin": r.get::<String, _>("origin"),
-            })
+            PrincipalAttr {
+                subject_id: r.get::<String, _>("subject_id"),
+                attr_key: r.get::<String, _>("attr_key"),
+                attr_value: r.get::<serde_json::Value, _>("attr_value"),
+                origin: r.get::<String, _>("origin"),
+            }
         })
         .collect();
     Ok(Json(items))
@@ -1095,7 +1101,7 @@ fn emit_attrs_event(pool: &sqlx::PgPool, env_id: Uuid, subject_id: &str, attr_ke
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     request_body = PutAttributeBody,
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::AttributeUpserted),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -1106,7 +1112,7 @@ pub async fn put_attribute(
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
     axum::Json(body): axum::Json<PutAttributeBody>,
-) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
+) -> Result<(StatusCode, Json<sentin8::shield::admin::AttributeUpserted>), (StatusCode, String)> {
     let (a, env_id, mut conn) =
         admin_gate(&state, &headers, &q, "sentin8:post:policy:write").await?;
     if sentin8::shield::json_to_restricted_expr(&body.attr_value).is_none() {
@@ -1150,7 +1156,7 @@ pub async fn put_attribute(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok((
         StatusCode::CREATED,
-        Json(serde_json::json!({"status": "upserted"})),
+        Json(AttributeUpserted { status: "upserted".to_string() }),
     ))
 }
 
@@ -1246,7 +1252,7 @@ async fn flip_policy_mode(
     mode: Option<&str>,
     enabled_override: Option<bool>,
     body: PolicyModeBody,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<PolicyModeMutated>, (StatusCode, String)> {
     let a =
         auth::require_any_scope(&state.config, &headers, &["sentin8:post:policy:write"]).await?;
     let env_id = resolve_env(&q, &a)?;
@@ -1316,12 +1322,12 @@ async fn flip_policy_mode(
     conn.commit()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(serde_json::json!({
-        "policy_set_name": body.policy_set_name,
-        "mode": out_mode,
-        "enabled": out_enabled,
-        "version": version,
-    })))
+    Ok(Json(PolicyModeMutated {
+        policy_set_name: body.policy_set_name.clone(),
+        mode: out_mode,
+        enabled: out_enabled,
+        version,
+    }))
 }
 
 /// `POST /v1/admin/policy-sets/enforce` - promote a set to enforced.
@@ -1343,7 +1349,7 @@ pub async fn admin_enforce_policy_set(
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
     Json(body): Json<PolicyModeBody>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<sentin8::shield::admin::PolicyModeMutated>, (StatusCode, String)> {
     flip_policy_mode(
         State(state),
         headers,
@@ -1374,7 +1380,7 @@ pub async fn admin_shadow_policy_set(
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
     Json(body): Json<PolicyModeBody>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<sentin8::shield::admin::PolicyModeMutated>, (StatusCode, String)> {
     flip_policy_mode(State(state), headers, Query(q), Some("shadow"), None, body).await
 }
 
@@ -1398,7 +1404,7 @@ pub async fn admin_disable_policy_set(
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
     Json(body): Json<PolicyModeBody>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<sentin8::shield::admin::PolicyModeMutated>, (StatusCode, String)> {
     flip_policy_mode(State(state), headers, Query(q), None, Some(false), body).await
 }
 
@@ -1474,7 +1480,7 @@ pub struct CreatePolicySetBody {
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     request_body = CreatePolicySetBody,
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::PolicySetMutated),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -1539,7 +1545,7 @@ pub async fn create_policy_set(
     ),
     request_body = PutPolicySetBody,
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::PolicySetMutated),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -1551,7 +1557,7 @@ pub async fn save_policy_set(
     Path(name): Path<String>,
     Query(q): Query<TargetEnvQuery>,
     body: axum::Json<PutPolicySetBody>,
-) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
+) -> Result<(StatusCode, Json<PolicySetMutated>), (StatusCode, String)> {
     check_text_caps(&body.policies, normalize_schema(body.schema.as_deref()))?;
     put_policy_set(State(state), headers, Path(name), Query(q), body).await
 }
@@ -1570,7 +1576,7 @@ pub async fn save_policy_set(
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "OK", body = serde_json::Value),
+        (status = 200, description = "OK", body = sentin8::shield::admin::PolicyModeMutated),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -1711,7 +1717,7 @@ pub async fn admin_delete_attribute_path(
     path = "/v1/admin/policy-decisions",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     responses(
-        (status = 200, description = "Recent decision log (policy.deny / would_deny rows)", body = Vec<serde_json::Value>),
+        (status = 200, description = "Recent decision log (policy.deny / would_deny rows)", body = Vec<sentin8::shield::admin::PolicyDecisionRow>),
         (status = 403, description = "Caller lacks the policy scope"),
     ),
     security(("sentin8:post:policy:read" = [])),
@@ -1721,7 +1727,7 @@ pub async fn list_policy_decisions(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
-) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+) -> Result<Json<Vec<sentin8::shield::admin::PolicyDecisionRow>>, (StatusCode, String)> {
     let a = auth::require_any_scope(&state.config, &headers, &["sentin8:post:policy:read"]).await?;
     crate::policy::require_policy(
         &state.policy,
@@ -1750,20 +1756,20 @@ pub async fn list_policy_decisions(
     .fetch_all(&mut *conn)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let items: Vec<serde_json::Value> = rows
+    let items: Vec<PolicyDecisionRow> = rows
         .iter()
         .map(|r| {
             let event: serde_json::Value = r.get("event");
-            serde_json::json!({
-                "id": r.get::<uuid::Uuid, _>("id"),
-                "timestamp": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-                "decision": event.get("action").cloned().unwrap_or(serde_json::json!("unknown")),
-                "action_id": event.get("action_id").cloned().unwrap_or(serde_json::json!("")),
-                "reason": event.get("reason").cloned().unwrap_or(serde_json::json!("")),
-                "policy_set": event.get("policy_set").cloned().unwrap_or(serde_json::json!("")),
-                "subject": event.get("subject").cloned().unwrap_or(serde_json::json!("")),
-                "enforced": event.get("enforced").cloned().unwrap_or(serde_json::json!(false)),
-            })
+            PolicyDecisionRow {
+                id: r.get::<uuid::Uuid, _>("id"),
+                timestamp: r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
+                decision: event.get("action").cloned().unwrap_or(serde_json::json!("unknown")),
+                action_id: event.get("action_id").cloned().unwrap_or(serde_json::json!("")),
+                reason: event.get("reason").cloned().unwrap_or(serde_json::json!("")),
+                policy_set: event.get("policy_set").cloned().unwrap_or(serde_json::json!("")),
+                subject: event.get("subject").cloned().unwrap_or(serde_json::json!("")),
+                enforced: event.get("enforced").cloned().unwrap_or(serde_json::json!(false)),
+            }
         })
         .collect();
     Ok(Json(items))

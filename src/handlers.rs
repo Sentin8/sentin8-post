@@ -45,7 +45,7 @@ pub struct AppState {
     get,
     path = "/v1/health",
     responses(
-        (status = 200, description = "Liveness (version, build, active connections)", body = serde_json::Value),
+        (status = 200, description = "Liveness (version, build, active connections)", body = sentin8::middleware::health::LiveHealth),
     ),
     security(),
     tag = "meta",
