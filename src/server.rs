@@ -75,16 +75,17 @@ pub async fn build_state(
     // serves while certificate-workload calls fail-closed until the
     // next boot (the map is normally published by enroll BEFORE
     // services start; func carries the same fallback).
-    let workload_registry =
-        match sentin8::auth::workload_registry::WorkloadMap::boot_load("sentin8:post")
-            .await
-        {
-            Ok(map) => map,
-            Err(e) => {
-                tracing::warn!(error = %e, "post: workload registry map unavailable at boot - certificate-workload calls fail-closed until next boot");
-                sentin8::auth::workload_registry::WorkloadMap::boot_load_empty("sentin8:post")
-            }
-        };
+    let workload_registry = match sentin8::auth::workload_registry::WorkloadMap::boot_load(
+        "sentin8:post",
+    )
+    .await
+    {
+        Ok(map) => map,
+        Err(e) => {
+            tracing::warn!(error = %e, "post: workload registry map unavailable at boot - certificate-workload calls fail-closed until next boot");
+            sentin8::auth::workload_registry::WorkloadMap::boot_load_empty("sentin8:post")
+        }
+    };
 
     let state = AppState {
         config: Arc::new(config),
@@ -127,9 +128,15 @@ pub fn routes(
             axum::routing::delete(handlers::delete_gateway),
         )
         // POST alias for RFW row_action_post (renderer only supports POST)
-        .route("/v1/gateways/{id}/delete", post(crate::rfw_aliases::gateway_delete))
+        .route(
+            "/v1/gateways/{id}/delete",
+            post(crate::rfw_aliases::gateway_delete),
+        )
         // POST alias for message replay
-        .route("/v1/messages/{id}/replay", post(crate::rfw_aliases::message_replay))
+        .route(
+            "/v1/messages/{id}/replay",
+            post(crate::rfw_aliases::message_replay),
+        )
         .route("/v1/gateways/test", post(handlers::test_gateway))
         // ── Policy-sets admin API ────────────────────────
         .route(

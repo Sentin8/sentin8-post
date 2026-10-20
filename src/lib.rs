@@ -21,12 +21,12 @@ pub mod inbox_relay;
 pub mod openapi;
 /// Shield (Sentin8:Policy) integration - shared bridge re-exports.
 pub mod policy;
-pub mod rfw_aliases;
 /// Shield policy-admin surface handlers.
 pub mod policy_admin;
 /// Policy hot-reload consumer.
 pub mod policy_reloader;
 /// Service self-registration declarations.
 pub mod registration;
+pub mod rfw_aliases;
 /// Axum router and server.
 pub mod server;

@@ -196,9 +196,9 @@ pub async fn list_policy_sets(
         .iter()
         .map(|r| {
             PolicySetRow {
- // id = the set name - the RFW row actions substitute {id}
- // from this field ; without it every Delete/Enforce
- // click POSTed `policy-sets//delete` (empty id → 404).
+                // id = the set name - the RFW row actions substitute {id}
+                // from this field ; without it every Delete/Enforce
+                // click POSTed `policy-sets//delete` (empty id → 404).
                 id: r.get::<String, _>("policy_set_name"),
                 policy_set_name: r.get::<String, _>("policy_set_name"),
                 description: r.get::<String, _>("description"),
@@ -207,7 +207,9 @@ pub async fn list_policy_sets(
                 version: r.get::<i32, _>("version"),
                 enabled: r.get::<bool, _>("enabled"),
                 policies_len: r.get::<i64, _>("policies_len"),
-                updated_at: r.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
+                updated_at: r
+                    .get::<chrono::DateTime<chrono::Utc>, _>("updated_at")
+                    .to_rfc3339(),
             }
         })
         .collect();
@@ -277,8 +279,12 @@ pub async fn get_policy_set(
         mode: row.get::<String, _>("mode"),
         version: row.get::<i32, _>("version"),
         enabled: row.get::<bool, _>("enabled"),
-        created_at: row.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-        updated_at: row.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
+        created_at: row
+            .get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+            .to_rfc3339(),
+        updated_at: row
+            .get::<chrono::DateTime<chrono::Utc>, _>("updated_at")
+            .to_rfc3339(),
     }))
 }
 
@@ -423,7 +429,11 @@ pub async fn put_policy_set(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok((
         StatusCode::CREATED,
-        Json(PolicySetMutated { policy_set_name: name, version, mode: out_mode }),
+        Json(PolicySetMutated {
+            policy_set_name: name,
+            version,
+            mode: out_mode,
+        }),
     ))
 }
 
@@ -705,15 +715,13 @@ pub async fn list_relations(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let items: Vec<RelationRecordRow> = rows
         .iter()
-        .map(|r| {
-            RelationRecordRow {
-                subject_type: r.get::<String, _>("subject_type"),
-                subject_id: r.get::<String, _>("subject_id"),
-                relation: r.get::<String, _>("relation"),
-                object_type: r.get::<String, _>("object_type"),
-                object_id: r.get::<String, _>("object_id"),
-                origin: r.get::<String, _>("origin"),
-            }
+        .map(|r| RelationRecordRow {
+            subject_type: r.get::<String, _>("subject_type"),
+            subject_id: r.get::<String, _>("subject_id"),
+            relation: r.get::<String, _>("relation"),
+            object_type: r.get::<String, _>("object_type"),
+            object_id: r.get::<String, _>("object_id"),
+            origin: r.get::<String, _>("origin"),
         })
         .collect();
     Ok(Json(items))
@@ -788,7 +796,10 @@ pub async fn put_relation(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok((
         StatusCode::CREATED,
-        Json(RelationUpserted { id: row.0, status: "upserted".to_string() }),
+        Json(RelationUpserted {
+            id: row.0,
+            status: "upserted".to_string(),
+        }),
     ))
 }
 
@@ -1059,13 +1070,11 @@ pub async fn list_attributes(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let items: Vec<PrincipalAttr> = rows
         .iter()
-        .map(|r| {
-            PrincipalAttr {
-                subject_id: r.get::<String, _>("subject_id"),
-                attr_key: r.get::<String, _>("attr_key"),
-                attr_value: r.get::<serde_json::Value, _>("attr_value"),
-                origin: r.get::<String, _>("origin"),
-            }
+        .map(|r| PrincipalAttr {
+            subject_id: r.get::<String, _>("subject_id"),
+            attr_key: r.get::<String, _>("attr_key"),
+            attr_value: r.get::<serde_json::Value, _>("attr_value"),
+            origin: r.get::<String, _>("origin"),
         })
         .collect();
     Ok(Json(items))
@@ -1156,7 +1165,9 @@ pub async fn put_attribute(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok((
         StatusCode::CREATED,
-        Json(AttributeUpserted { status: "upserted".to_string() }),
+        Json(AttributeUpserted {
+            status: "upserted".to_string(),
+        }),
     ))
 }
 
@@ -1762,13 +1773,33 @@ pub async fn list_policy_decisions(
             let event: serde_json::Value = r.get("event");
             PolicyDecisionRow {
                 id: r.get::<uuid::Uuid, _>("id"),
-                timestamp: r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-                decision: event.get("action").cloned().unwrap_or(serde_json::json!("unknown")),
-                action_id: event.get("action_id").cloned().unwrap_or(serde_json::json!("")),
-                reason: event.get("reason").cloned().unwrap_or(serde_json::json!("")),
-                policy_set: event.get("policy_set").cloned().unwrap_or(serde_json::json!("")),
-                subject: event.get("subject").cloned().unwrap_or(serde_json::json!("")),
-                enforced: event.get("enforced").cloned().unwrap_or(serde_json::json!(false)),
+                timestamp: r
+                    .get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+                    .to_rfc3339(),
+                decision: event
+                    .get("action")
+                    .cloned()
+                    .unwrap_or(serde_json::json!("unknown")),
+                action_id: event
+                    .get("action_id")
+                    .cloned()
+                    .unwrap_or(serde_json::json!("")),
+                reason: event
+                    .get("reason")
+                    .cloned()
+                    .unwrap_or(serde_json::json!("")),
+                policy_set: event
+                    .get("policy_set")
+                    .cloned()
+                    .unwrap_or(serde_json::json!("")),
+                subject: event
+                    .get("subject")
+                    .cloned()
+                    .unwrap_or(serde_json::json!("")),
+                enforced: event
+                    .get("enforced")
+                    .cloned()
+                    .unwrap_or(serde_json::json!(false)),
             }
         })
         .collect();
