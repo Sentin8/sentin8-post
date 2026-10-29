@@ -70,7 +70,7 @@ pub async fn build_state(
     // token-free authorization record) for the cert-first handler gate -
     // sys's post pusher presents the `sys-post` certificate on every
     // notification send; a bearer-only gate 401s it forever (the 92k/day
-    // retry loop, CAPTCPU-1 item 1). Fail-open-with-warning on an
+    // retry loop item 1). Fail-open-with-warning on an
     // unreachable Valkey at boot - the bearer path (user/delegated)
     // serves while certificate-workload calls fail-closed until the
     // next boot (the map is normally published by enroll BEFORE

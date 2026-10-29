@@ -1432,7 +1432,7 @@ const MAX_SCHEMA_TEXT_BYTES: usize = 64 * 1024;
 
 /// Normalize the optional Shield schema from a request body: an empty or
 /// whitespace-only string means "no schema" (the RFW form renderer submits
-/// `""` for untouched optional textareas - ).
+/// `""` for untouched optional textareas).
 fn normalize_schema(schema: Option<&str>) -> Option<&str> {
     schema.filter(|s| !s.trim().is_empty())
 }

@@ -26,7 +26,7 @@ pub async fn verify_token(
 /// auth DESIGN §4.3f), Bearer token fallback (user/delegated flows).
 /// Sys's post pusher presents the `sys-post` certificate on every
 /// notification send - the bearer-only gate 401'd it forever (the
-/// 92k/day retry loop, CAPTCPU-1 item 1).
+/// 92k/day retry loop item 1).
 pub async fn verify_cert_or_token(
     registry: &sentin8::auth::workload_registry::WorkloadMap,
     config: &PostConfig,

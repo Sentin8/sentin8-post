@@ -269,7 +269,7 @@ CREATE TABLE IF NOT EXISTS post.outbox (
     relayed         BOOLEAN NOT NULL DEFAULT false,
     relayed_at      TIMESTAMPTZ,
     relay_attempts  INT NOT NULL DEFAULT 0,
-    -- WARN-5 backoff column (matches the SDK outbox DDL): a retryable
+    -- backoff column (matches the SDK outbox DDL): a retryable
     -- failure parks the row until this timestamp.
     next_retry_at   TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
