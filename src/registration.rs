@@ -13,8 +13,6 @@ use sentin8::registration::{
     AdminScope, AdminUi, AdminUiPage, PgRole, PolicySetDecl, Registration, RelationDecl,
     SqlMigration,
 };
-use utoipa::OpenApi;
-
 const PG_ROLES: &[PgRole] = &[PgRole {
     scope: "sentin8:post:read,sentin8:post:write",
     role: "sentin8_post_service",
@@ -112,9 +110,6 @@ const POLICIES: &[PolicySetDecl] = &[
 const RELATIONS: &[RelationDecl] = &[];
 
 /// Serialize the utoipa OpenAPI spec (used for the `all` and `openapi` sections).
-fn openapi_spec() -> serde_json::Value {
-    serde_json::to_value(crate::openapi::PostOpenApi::openapi()).unwrap_or(serde_json::Value::Null)
-}
 
 /// Print the registration JSON to stdout.
 ///
@@ -157,6 +152,14 @@ const M2M_GRANTS: &[sentin8::registration::M2mGrant] = &[
 
 /// Handle print.
 pub fn print(section: Option<String>) -> anyhow::Result<()> {
+        // The utoipa dump lives OUTSIDE this file (OPENAPI_DUMP static in
+    // main.rs/lib.rs): test harnesses embedding this file via #[path] carry
+    // neither the static nor the openapi module and never print a spec.
+    #[cfg(not(test))]
+    let dump: fn() -> serde_json::Value = crate::OPENAPI_DUMP;
+    #[cfg(test)]
+    let dump: fn() -> serde_json::Value = || serde_json::Value::Null;
+
     let reg = Registration {
         service_type: "sentin8:post",
         subdomain: "post",
@@ -208,7 +211,7 @@ pub fn print(section: Option<String>) -> anyhow::Result<()> {
         service_actions: None,
         m2m_grants: Some(M2M_GRANTS),
         openapi_url: "/openapi.json",
-        openapi: openapi_spec,
+        openapi: dump,
     };
-    sentin8::registration::print_registration(section, &reg, openapi_spec)
+    sentin8::registration::print_registration(section, &reg, dump)
 }
