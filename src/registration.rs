@@ -164,6 +164,7 @@ pub fn print(section: Option<String>) -> anyhow::Result<()> {
         service_type: "sentin8:post",
         subdomain: "post",
         health_path: "/v1/health",
+        exposure: "",
         // Admin scope declarations for the role registry: the `sentin8:post:admin`
         // role carries the granular scopes its handlers gate on
         // (`sentin8:post:read`, `sentin8:post:write`). `sentin8:post:admin` itself is a role NAME,
