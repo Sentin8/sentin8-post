@@ -127,6 +127,13 @@ const M2M_GRANTS: &[sentin8::registration::M2mGrant] = &[
         workload: "post-audit",
         scopes: &["sentin8:sys:audit:write"],
     },
+    // The push channel adapter (push DESIGN.md section 1.3): Post forwards a
+    // notification to Sentin8:Push with the `post-push` certificate as identity,
+    // so this workload needs push's delivery scope.
+    sentin8::registration::M2mGrant {
+        workload: "post-push",
+        scopes: &["sentin8:push:deliver:write"],
+    },
     sentin8::registration::M2mGrant {
         workload: "sentin8:post",
         scopes: &["sentin8:bus:produce"],

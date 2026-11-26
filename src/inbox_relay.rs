@@ -1212,7 +1212,24 @@ async fn gateway_stub_dispatch(
             }
         }
         "push" => {
-            tracing::info!(message_id = %inbox_id, user_id = ?user_id, "push gateway stub: would send push notification");
+            // The push channel is a real adapter, not a stub (push DESIGN.md
+            // section 1.3). Sentin8:Push owns the device registry and decides
+            // between the live SSE stream, a device-push provider, and retained
+            // backlog; Post only states who the notification is for and what it
+            // says.
+            let Some(recipient) = user_id else {
+                return Err("push channel: inbox row has no recipient_user_id".to_string());
+            };
+            deliver_push(
+                pool,
+                env_id,
+                recipient,
+                inbox_id,
+                &subject,
+                &body,
+                metadata.get("deep_link").and_then(|v| v.as_str()),
+            )
+            .await?;
         }
         "web_push" => {
             tracing::info!(message_id = %inbox_id, user_id = ?user_id, "web push gateway stub: would send web push");
@@ -1224,6 +1241,74 @@ async fn gateway_stub_dispatch(
     }
     Ok(())
 }
+
+/// Forward a notification to Sentin8:Push.
+///
+/// The call is M2M with the `post-push` CERTIFICATE as the identity, following
+/// the same pattern as the BFF's post pusher: ensure the workload certificate
+/// once, build ONE cert-presenting client, and reuse it. No token is minted,
+/// because the user did not initiate this operation.
+///
+/// A failure is returned to the caller so Post's own retry record covers it. The
+/// two layers are independent and both idempotent, keyed on the inbox row id.
+async fn deliver_push(
+    pool: &sqlx::PgPool,
+    env_id: uuid::Uuid,
+    recipient_user_id: uuid::Uuid,
+    inbox_id: uuid::Uuid,
+    subject: &str,
+    body: &str,
+    deep_link: Option<&str>,
+) -> Result<(), String> {
+    let cfg = sentin8::config::Sentin8Config::from_env();
+    let base = cfg.platform_service_url(pool, "sentin8:push").await;
+
+    // The `post-push` workload pair is what the M2M grant in push's
+    // registration authorises; minting retries while Acme comes up, and a
+    // failure here is retryable by Post's relay rather than fatal.
+    let cert = sentin8::auth::m2m::ensure_workload_certificate(
+        &cfg.sentin8_auth_issuer(),
+        "post-push",
+        &sentin8::auth::m2m::platform_ca_path(),
+    )
+    .await
+    .map_err(|e| format!("push workload certificate: {e}"))?;
+
+    let mtls = sentin8::middleware::mtls::MtlsConfig::new(
+        &cert.ca_cert_path,
+        &cert.cert_path,
+        &cert.key_path,
+    );
+    let client = sentin8::middleware::mtls::build_mtls_client(&mtls)
+        .map_err(|e| format!("push mTLS client: {e}"))?;
+
+    let resp = client
+        .post(format!("{base}/v1/deliver"))
+        .header("x-sentin8-env-id", env_id.to_string())
+        .json(&serde_json::json!({
+            "user_id": recipient_user_id.to_string(),
+            "notification_id": inbox_id.to_string(),
+            // The inbox row id is the natural idempotency key: the relay may
+            // deliver the same row twice, and push must not double-notify.
+            "idempotency_key": inbox_id.to_string(),
+            "title": subject,
+            "body": body,
+            "deep_link": deep_link,
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("push deliver call failed: {e}"))?;
+
+    let status = resp.status();
+    if status.is_success() {
+        tracing::info!(message_id = %inbox_id, "post: push adapter accepted delivery");
+        Ok(())
+    } else {
+        let detail = resp.text().await.unwrap_or_default();
+        Err(format!("push deliver rejected: {status} {detail}"))
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
